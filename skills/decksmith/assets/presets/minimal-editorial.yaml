@@ -1,0 +1,30 @@
+name: minimal-editorial-16x9
+canvas:
+  width: 1280
+  height: 720
+colors:
+  background: "#F7F4EE"
+  surface: "#EAE5DA"
+  text: "#17202A"
+  muted: "#66717D"
+  accent: "#315CFF"
+  on_accent: "#FFFFFF"
+typography:
+  family: null
+  title: 58
+  heading: 38
+  body: 24
+  small: 16
+  line_spacing: 1.08
+spacing:
+  margin_x: 76
+  margin_y: 56
+  gutter: 36
+  title_gap: 28
+image:
+  corner_radius: 20
+  fit: cover
+  generated_limit: 6
+decoration:
+  page_numbers: true
+  accent_bar: true
