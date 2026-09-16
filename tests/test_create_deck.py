@@ -51,6 +51,16 @@ class CreateDeckEnvironmentTests(unittest.TestCase):
             ):
                 self.assertEqual(MODULE.absolute_env_path("RUNTIME_PYTHON"), runtime)
 
+    def test_missing_home_does_not_block_environment_override(self):
+        with tempfile.TemporaryDirectory() as raw:
+            skill = self.make_presentations_skill(Path(raw))
+            with mock.patch.dict(
+                os.environ,
+                {"DECKSMITH_PRESENTATIONS_SKILL_DIR": str(skill)},
+                clear=True,
+            ), mock.patch.object(MODULE.Path, "home", side_effect=RuntimeError):
+                self.assertEqual(MODULE.resolve_presentations_skill_dir(), skill.resolve())
+
 
 if __name__ == "__main__":
     unittest.main()

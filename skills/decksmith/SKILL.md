@@ -9,7 +9,7 @@ description: 題材・構成・スタイルを個別に指定して、編集可�
 
 1. 題材：テーマ、対象者、目的、言語、根拠資料
 2. 構成：スライド数、話の順序、各スライドの役割
-3. スタイル：創造的な方向性、参考画像、実行可能なレイアウト規則
+3. スタイル：創造的な方向性、参考画像、全体設定とレイアウトカタログ
 
 PPTXの生成と検証には内蔵のPresentations機能を使用する。利用者が画像生成を求めた場合、または選択したスタイルに画像が必要な場合は、内蔵の画像生成機能を使用する。APIキーやローカルGPUを要求しない。
 
@@ -27,10 +27,11 @@ PPTXの生成と検証には内蔵のPresentations機能を使用する。利用
 
 ## スタイルのコンパイル
 
-参考画像を使う場合は、すべての画像を確認し、感覚的な方向性と決定的な実装規則を分離する。
+参考画像を使う場合は、すべての画像を確認し、[スタイルシステム](references/style-system.md)に従って、参考記事形式の`style.yaml`を作る。
 
-- [クリエイティブスタイルの仕様](references/style-system.md#クリエイティブスタイル)に従って`creative-style.yaml`を作る
-- [実行可能スタイルの仕様](references/style-system.md#実行可能スタイル)に従って`executable-style.yaml`へ変換する
+- `Overall Design Settings`にTone、Key Visual、Color Palette、Photography Style、Typography、Common Layout Rulesを記録する
+- `Layout Variations (Catalog)`にType、Design、対応する`Applies To`を記録する
+- DeckSmithが`style.yaml`を配色、文字サイズ、余白、装飾、レイアウトバリアントへ自動コンパイルする。内部仕様を利用者へ作らせない
 - DeckSmithの既定値より、参考資料から読み取れる特徴を優先する
 - 存命のアーティスト名を指定して模倣せず、観察可能な視覚的特徴として記述する
 
@@ -38,7 +39,7 @@ PPTXの生成と検証には内蔵のPresentations機能を使用する。利用
 
 ## PowerPoint生成手順
 
-1. `topic.yaml`、`structure.yaml`、`creative-style.yaml`、`executable-style.yaml`を作成する。[プロジェクトファイルの仕様](references/deck-spec.md)に従う。
+1. `topic.yaml`、`structure.yaml`、`style.yaml`を作成する。[プロジェクトファイルの仕様](references/deck-spec.md)に従う。
 2. 利用者が調査を求めた場合、または正確な内容に調査が必要な場合だけ情報を収集する。出典URLを対象スライドの引用情報へ記録する。
 3. 生成画像ごとに、用途、主題、構図、スタイル、縦横比、文字用の余白を指定したプロンプトを作る。利用者が必要としない限り、画像内の文字やロゴを禁止する。
 4. 内蔵の画像生成機能で画像を作り、プロジェクトの素材ディレクトリへ保存する。生成結果のパスを`structure.yaml`へ記録する。
@@ -49,8 +50,7 @@ PPTXの生成と検証には内蔵のPresentations機能を使用する。利用
    "${RUNTIME_PYTHON:-${CODEX_PRIMARY_RUNTIME_PYTHON:-python3}}" scripts/create_deck.py \
      --topic <project>/topic.yaml \
      --structure <project>/structure.yaml \
-     --creative-style <project>/creative-style.yaml \
-     --executable-style <project>/executable-style.yaml \
+     --style <project>/style.yaml \
      --output <project>/output/deck.pptx
    ```
 
@@ -67,4 +67,4 @@ PPTXの生成と検証には内蔵のPresentations機能を使用する。利用
 - 不明な事実を作らない。前提条件が結論に影響する場合は、スライド上で明示するか利用者へ確認する。
 - プレゼンテーション用ランタイムまたは画像生成機能を使用できない場合は、公開サービスで代替せず、利用できない機能を具体的に説明する。
 - 組み込みPresentationsの内部ディレクトリを作成・ダウンロード・指定するよう利用者へ求めない。検出できない場合は、Presentationsが利用可能なChatGPT／Codex環境での実行が必要だと説明する。
-- 日本語資料では、`executable-style.yaml`に利用可能な日本語フォントを指定し、PNGプレビューで日本語が表示されることを確認する。実行環境にCJKフォントがない場合は、編集可能な日本語テキストをPPTXに保持したうえで、視覚検査が未完了であることを伝える。プレビューが正常だと主張しない。
+- 日本語資料では、PNGプレビューで日本語が表示されることを確認する。実行環境にCJKフォントがない場合は、編集可能な日本語テキストをPPTXに保持したうえで、視覚検査が未完了であることを伝える。プレビューが正常だと主張しない。

@@ -1,6 +1,6 @@
 # DeckSmithプロジェクトファイル仕様
 
-利用者は自然言語で入力する。DeckSmithは、再現と検証ができるように内容を4つのYAMLファイルへ変換する。
+利用者は自然言語で入力する。DeckSmithは、再現と検証ができるように内容を3つのYAMLファイルへ変換する。
 
 ## `topic.yaml`
 
@@ -61,10 +61,10 @@ slides:
 
 ## スタイルファイル
 
-[スタイルシステム](style-system.md)に従う。`creative-style.yaml`にはデザイン上の意図を保存し、`executable-style.yaml`には描画に必要な具体的な値を保存する。
+[スタイルシステム](style-system.md)に従い、全体設定とレイアウトカタログを`style.yaml`へ保存する。描画に必要な具体値はDeckSmithが内部でコンパイルする。
 
 ## 生成される正規化済み仕様
 
-`scripts/create_deck.py`は4つのYAMLを検証して統合し、非公開のビルドディレクトリへ正規化済みJSONを生成する。JavaScript製ビルダーは、そのJSONだけを入力として使用する。
+`scripts/create_deck.py`は3つのYAMLを検証して統合し、非公開のビルドディレクトリへ正規化済みJSONを生成する。JavaScript製ビルダーは、そのJSONだけを入力として使用する。
 
 画像ファイルが存在しない場合、最終生成は失敗する。未生成画像を含む下書きが必要な場合だけ、`--allow-missing-images`を明示的に指定する。

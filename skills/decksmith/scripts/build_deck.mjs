@@ -52,6 +52,43 @@ function addBulletList(slide, items, position, style) {
   return shape;
 }
 
+function displayTitle(value, typography) {
+  const text = String(value ?? "");
+  return typography.uppercase_titles ? text.toUpperCase() : text;
+}
+
+function catalogEntry(style, layout) {
+  return (style.layout_catalog ?? []).find((entry) => (entry.applies_to ?? []).includes(layout)) ?? {
+    variant: "standard",
+    type: "Default",
+    design: "DeckSmith standard layout",
+  };
+}
+
+function addDividerList(slide, items, position, style, variant) {
+  const values = items ?? [];
+  if (!values.length) return;
+  const rowHeight = Math.min(82, position.height / values.length);
+  values.forEach((item, index) => {
+    const top = position.top + index * rowHeight;
+    const label = variant === "terminal-list" ? `>_ ${String(item)}` : String(item);
+    addText(slide, label, {
+      left: position.left + (variant === "terminal-list" ? 18 : 0),
+      top: top + 10,
+      width: position.width - 24,
+      height: rowHeight - 16,
+    }, style);
+    if (index < values.length - 1) {
+      slide.shapes.add({
+        geometry: "rect",
+        position: { left: position.left, top: top + rowHeight - 3, width: position.width, height: 2 },
+        fill: style.color,
+        line: { fill: "none", width: 0 },
+      });
+    }
+  });
+}
+
 async function addImage(slide, image, position, defaultFit, radius) {
   if (!image?.path) return false;
   const bytes = await fs.readFile(image.path);
@@ -95,6 +132,19 @@ function addPageFurniture(slide, slideNumber, total, style, fontFamily) {
       { typeface: fontFamily, fontSize: typography.small, color: colors.muted, alignment: "right" },
     );
   }
+  if (decoration.frame_lines) {
+    for (const position of [
+      { left: 24, top: 20, width: 1232, height: 2 },
+      { left: 24, top: 698, width: 1232, height: 2 },
+    ]) {
+      slide.shapes.add({
+        geometry: "rect",
+        position,
+        fill: colors.accent,
+        line: { fill: "none", width: 0 },
+      });
+    }
+  }
 }
 
 function notesFor(slideSpec) {
@@ -132,6 +182,8 @@ for (let index = 0; index < spec.slides.length; index += 1) {
   const item = spec.slides[index];
   const slide = presentation.slides.add();
   slide.background.fill = colors.background;
+  const catalog = catalogEntry(style, item.layout);
+  const variant = catalog.variant;
   const mx = spacing.margin_x;
   const my = spacing.margin_y;
   const contentTop = my + typography.heading + spacing.title_gap;
@@ -143,6 +195,32 @@ for (let index = 0; index < spec.slides.length; index += 1) {
   };
 
   if (item.layout === "cover") {
+    if (variant === "mega-title") {
+      const hasImage = await addImage(slide, item.image, { left: 786, top: 248, width: 494, height: 472 }, imageStyle.fit, imageStyle.corner_radius);
+      if (!hasImage) {
+        slide.shapes.add({
+          geometry: "rect",
+          position: { left: 0, top: 520, width: 1280, height: 200 },
+          fill: colors.accent,
+          line: { fill: "none", width: 0 },
+        });
+      }
+      addText(slide, displayTitle(item.title, typography), { left: mx, top: 74, width: 1120, height: 360 }, {
+        typeface: fontFamily,
+        fontSize: Math.max(typography.title, 76),
+        bold: true,
+        color: colors.text,
+        verticalAlignment: "middle",
+        lineSpacing: typography.line_spacing,
+      });
+      if (item.subtitle) addText(slide, item.subtitle, { left: mx, top: 570, width: 650, height: 78 }, {
+        ...commonBody,
+        color: hasImage ? colors.muted : colors.on_accent,
+      });
+      const notes = notesFor(item);
+      if (notes) slide.speakerNotes.textFrame.setText(notes);
+      continue;
+    }
     const hasImage = await addImage(slide, item.image, { left: 690, top: 0, width: 590, height: 720 }, imageStyle.fit, imageStyle.corner_radius);
     if (!hasImage) {
       slide.shapes.add({
@@ -152,7 +230,7 @@ for (let index = 0; index < spec.slides.length; index += 1) {
         line: { fill: "none", width: 0 },
       });
     }
-    addText(slide, item.title, { left: mx, top: 176, width: 660, height: 190 }, {
+    addText(slide, displayTitle(item.title, typography), { left: mx, top: 176, width: 660, height: 190 }, {
       typeface: fontFamily,
       fontSize: typography.title,
       bold: true,
@@ -165,7 +243,7 @@ for (let index = 0; index < spec.slides.length; index += 1) {
     });
   } else if (item.layout === "closing") {
     slide.background.fill = colors.accent;
-    addText(slide, item.title, { left: 130, top: 210, width: 1020, height: 160 }, {
+    addText(slide, displayTitle(item.title, typography), { left: 130, top: 210, width: 1020, height: 160 }, {
       typeface: fontFamily,
       fontSize: typography.title,
       bold: true,
@@ -186,7 +264,7 @@ for (let index = 0; index < spec.slides.length; index += 1) {
       fill: "#00000099",
       line: { fill: "none", width: 0 },
     });
-    addText(slide, item.title, { left: mx, top: 190, width: 900, height: 160 }, {
+    addText(slide, displayTitle(item.title, typography), { left: mx, top: 190, width: 900, height: 160 }, {
       typeface: fontFamily,
       fontSize: typography.title,
       bold: true,
@@ -197,7 +275,7 @@ for (let index = 0; index < spec.slides.length; index += 1) {
       color: "#FFFFFF",
     });
   } else {
-    addText(slide, item.title, { left: mx, top: my, width: 1128, height: 70 }, {
+    addText(slide, displayTitle(item.title, typography), { left: mx, top: my, width: 1128, height: 76 }, {
       typeface: fontFamily,
       fontSize: typography.heading,
       bold: true,
@@ -205,12 +283,18 @@ for (let index = 0; index < spec.slides.length; index += 1) {
     });
 
     if (item.layout === "statement") {
-      addText(slide, item.body ?? item.subtitle ?? "", { left: 135, top: 225, width: 1010, height: 260 }, {
+      const impact = variant === "impact-statement";
+      addText(slide, item.body ?? item.subtitle ?? "", {
+        left: impact ? mx : 135,
+        top: impact ? 190 : 225,
+        width: impact ? 1120 : 1010,
+        height: impact ? 350 : 260,
+      }, {
         typeface: fontFamily,
-        fontSize: Math.max(typography.heading, 42),
+        fontSize: impact ? Math.max(typography.title, 68) : Math.max(typography.heading, 42),
         bold: true,
         color: colors.accent,
-        alignment: "center",
+        alignment: impact ? "left" : "center",
         verticalAlignment: "middle",
       });
     } else if (item.layout === "split") {
@@ -219,21 +303,28 @@ for (let index = 0; index < spec.slides.length; index += 1) {
         { value: item.left ?? {}, left: mx },
         { value: item.right ?? {}, left: mx + columnWidth + spacing.gutter },
       ];
-      for (const block of blocks) {
+      for (let blockIndex = 0; blockIndex < blocks.length; blockIndex += 1) {
+        const block = blocks[blockIndex];
+        const dual = variant === "dual-split";
+        const blockFill = dual && blockIndex === 0 ? colors.accent : colors.surface;
+        const blockText = dual && blockIndex === 0 ? colors.on_accent : colors.text;
         slide.shapes.add({
           geometry: "rect",
           position: { left: block.left, top: contentTop, width: columnWidth, height: 420 },
-          fill: colors.surface,
+          fill: blockFill,
           line: { fill: "none", width: 0 },
-          borderRadius: 18,
+          borderRadius: dual ? 0 : 18,
         });
         addText(slide, block.value.heading ?? "", { left: block.left + 30, top: contentTop + 30, width: columnWidth - 60, height: 52 }, {
           typeface: fontFamily,
           fontSize: 28,
           bold: true,
-          color: colors.text,
+          color: blockText,
         });
-        addBulletList(slide, block.value.items ?? [], { left: block.left + 30, top: contentTop + 108, width: columnWidth - 60, height: 260 }, commonBody);
+        addBulletList(slide, block.value.items ?? [], { left: block.left + 30, top: contentTop + 108, width: columnWidth - 60, height: 260 }, {
+          ...commonBody,
+          color: blockText,
+        });
       }
     } else if (item.layout === "image-left" || item.layout === "image-right") {
       const imageOnLeft = item.layout === "image-left";
@@ -242,6 +333,18 @@ for (let index = 0; index < spec.slides.length; index += 1) {
       await addImage(slide, item.image, { left: imageLeft, top: contentTop, width: 500, height: 420 }, imageStyle.fit, imageStyle.corner_radius);
       if (item.body) addText(slide, item.body, { left: textLeft, top: contentTop, width: 500, height: 125 }, commonBody);
       if (item.bullets?.length) addBulletList(slide, item.bullets, { left: textLeft, top: contentTop + (item.body ? 145 : 0), width: 500, height: item.body ? 250 : 390 }, commonBody);
+    } else if (item.layout === "bullets" && ["divider-list", "terminal-list"].includes(variant)) {
+      if (item.body) addText(slide, item.body, { left: mx, top: contentTop, width: 1030, height: 90 }, commonBody);
+      addDividerList(slide, item.bullets, {
+        left: mx,
+        top: contentTop + (item.body ? 112 : 0),
+        width: 1120,
+        height: item.body ? 300 : 410,
+      }, {
+        ...commonBody,
+        color: variant === "terminal-list" ? colors.accent : colors.text,
+        fontSize: variant === "terminal-list" ? Math.max(typography.body, 24) : typography.body,
+      }, variant);
     } else {
       if (item.body) addText(slide, item.body, { left: mx, top: contentTop, width: 1030, height: 105 }, commonBody);
       if (item.bullets?.length) addBulletList(slide, item.bullets, { left: mx, top: contentTop + (item.body ? 130 : 0), width: 1030, height: item.body ? 310 : 420 }, commonBody);

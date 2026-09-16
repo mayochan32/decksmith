@@ -84,8 +84,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--topic", required=True, type=Path)
     parser.add_argument("--structure", required=True, type=Path)
-    parser.add_argument("--creative-style", required=True, type=Path)
-    parser.add_argument("--executable-style", required=True, type=Path)
+    parser.add_argument(
+        "--style",
+        type=Path,
+        help="Qiita記事形式の利用者向けスタイルYAML。通常はこちらを使用します。",
+    )
+    parser.add_argument("--creative-style", type=Path, help="互換用の内部スタイル指定です。")
+    parser.add_argument("--executable-style", type=Path, help="互換用の内部描画スタイル指定です。")
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument(
         "--presentations-skill-dir",
@@ -99,6 +104,17 @@ def main() -> int:
         help="同じ成果物操作内で修正版を生成するときだけ指定します。",
     )
     args = parser.parse_args()
+
+    if args.style:
+        if args.creative_style or args.executable_style:
+            parser.error("--styleと--creative-style／--executable-styleは同時に指定できません")
+        creative_style = args.style.resolve()
+        executable_style = None
+    else:
+        if not args.creative_style or not args.executable_style:
+            parser.error("--style、または--creative-styleと--executable-styleの組を指定してください")
+        creative_style = args.creative_style.resolve()
+        executable_style = args.executable_style.resolve()
 
     try:
         runtime_node = absolute_env_path("RUNTIME_NODE")
@@ -129,9 +145,9 @@ def main() -> int:
         spec = compile_spec(
             args.topic.resolve(),
             args.structure.resolve(),
-            args.creative_style.resolve(),
-            args.executable_style.resolve(),
-            args.allow_missing_images,
+            creative_style,
+            executable_style,
+            allow_missing_images=args.allow_missing_images,
         )
         spec_path = build_dir / "deck-spec.json"
         import json

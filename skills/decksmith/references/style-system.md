@@ -1,86 +1,72 @@
 # DeckSmithスタイルシステム
 
-DeckSmithは、視覚的な意図と、PowerPointで実行できる規則を分離する。利用者は自然言語または参考画像でスタイルを指定し、エージェントがYAMLを作成する。
+DeckSmithの標準スタイルは、参考記事と同じ考え方で「全体デザイン設定」と「レイアウトバリエーション」を1つの`style.yaml`に保存する。利用者は自然言語、参考画像、既存スライド、またはYAMLで指定できる。
 
-## クリエイティブスタイル
-
-`creative-style.yaml`には、資料から受ける印象や世界観を記録する。描画エンジンが変わっても再利用できる内容にする。
+## 公開スタイルYAML
 
 ```yaml
-name: quiet-editorial
-intent: 落ち着きと信頼感があり、余白を広く使う
-keywords:
-  - エディトリアル
-  - 控えめ
-  - 人間味
-palette_direction: 温かみのある白、チャコール、寒色系のアクセント1色
-imagery:
-  medium: エディトリアル写真
-  lighting: 柔らかな方向性のある自然光
-  composition: 非対称で、十分なネガティブスペースを確保
-  people: 自然な瞬間を捉えた人物表現
-  avoid:
-    - 画像内の文字
-    - ロゴ
-    - 光沢感の強い作り込まれたストック写真
-texture: 控えめな紙の質感
-motion: なし
+Style: スタイル名
+Overall Design Settings:
+  Tone: 全体の印象と伝えたい感情
+  Key Visual:
+    Motif: 中心となる視覚モチーフ
+    Decoration: 装飾の使い方
+  Color Palette:
+    Background: "#RRGGBB (説明)"
+    Surface: "#RRGGBB (説明)"
+    Main Text: "#RRGGBB (説明)"
+    Accent: "#RRGGBB (説明)"
+  Photography Style:
+    - 被写体、光、構図、余白、避ける表現
+  Typography:
+    Display Heading: 見出しの分類、太さ、大小差、大文字の扱い
+    Body: 本文の分類、行間、密度
+  Common Layout Rules:
+    Alignment: グリッドと整列
+    Lines: 線、枠、区切り
+    Whitespace: 余白と情報密度
+
+Layout Variations (Catalog):
+  - Type: バリエーション名
+    Applies To: [cover]
+    Design: 位置関係、大小差、色面、画像処理を具体的に記述
+
+Points to Note When Applying the Design:
+  - 適用時に守る可読性やブランド上の注意
 ```
 
-観察可能な特徴として記述する。「美しい」「プロらしい」のような曖昧な表現だけに頼らず、構図、光、色、質感、被写体の扱いを具体化する。
+必須項目は`Overall Design Settings`内の`Tone`、`Color Palette`、`Typography`と、1件以上の`Layout Variations (Catalog)`である。`Key Visual`、`Photography Style`、`Common Layout Rules`、適用時の注意は任意だが、参考画像から作る場合は可能な限り記録する。
 
-## 実行可能スタイル
+`Applies To`には`cover`、`statement`、`bullets`、`split`、`image-left`、`image-right`、`full-bleed`、`closing`を指定できる。省略時は`Type`と`Design`の記述から推定する。意図しない推定を避けるため、保存用スタイルでは明示を推奨する。
 
-`executable-style.yaml`は、クリエイティブスタイルを決定的なレイアウト値へ変換する。座標とフォントサイズの単位には、96 DPIのCSSピクセルを使用する。
+## 参考資料からの作成
 
-```yaml
-name: quiet-editorial-16x9
-canvas:
-  width: 1280
-  height: 720
-colors:
-  background: "#F7F4EE"
-  surface: "#ECE7DD"
-  text: "#1C232B"
-  muted: "#66717D"
-  accent: "#315CFF"
-  on_accent: "#FFFFFF"
-typography:
-  family: null
-  title: 58
-  heading: 38
-  body: 24
-  small: 16
-  line_spacing: 1.08
-spacing:
-  margin_x: 76
-  margin_y: 56
-  gutter: 36
-  title_gap: 28
-image:
-  corner_radius: 20
-  fit: cover
-  generated_limit: 6
-decoration:
-  page_numbers: true
-  accent_bar: true
-```
-
-`family: null`を指定すると、ランタイムがインストール済みフォントから選択する。テンプレートまたは利用者の指定で必要な場合だけ、フォント名を明示する。
-
-日本語の業務資料では游ゴシックやNoto Sans JPが候補になるが、強制する前に実行環境で利用できることを確認する。
-
-## 参考資料の分析項目
-
-参考画像または既存スライドから、次の特徴を抽出する。
+次の観察可能な特徴を抽出する。「美しい」「プロらしい」のような曖昧語だけに頼らない。
 
 - スライドの縦横比と安全余白
 - 基調色、補助色、文字色、アクセント色
-- 書体の分類、ウェイトの差、概算の文字サイズ
+- 書体の分類、ウェイト差、文字サイズの大小差
 - 情報密度、余白、整列、グリッド
 - 画像のトリミング、被写体の位置、光、彩度、質感
-- 図形の形状、線の太さ、角の処理、影
-- ページ番号やフッターなどの反復要素
-- 意図的に使用していないと考えられる要素
+- 図形、線、角、影、反復要素
+- 意図的に使用していない要素
 
-複数の参考資料で特徴が一致しない場合は、最も多く繰り返される特徴を優先し、推定した判断を`creative-style.yaml`へ記録する。
+複数の参考資料で特徴が一致しない場合は、反復回数と視覚的重要度を基準に優先し、推定をYAMLへ明記する。存命の作家名による模倣指示ではなく、観察可能な特徴へ言い換える。
+
+## 内部コンパイル
+
+`scripts/compile_spec.py`は公開スタイルYAMLを、配色、文字サイズ、余白、画像規則、装飾、レイアウトバリアントを含む内部仕様へ変換する。利用者が内部仕様を編集する必要はない。
+
+現在認識する代表的なバリアントは次のとおり。
+
+| バリアント | 主な記述例 | 対応レイアウト |
+|---|---|---|
+| `mega-title` | Mega、Massive、Magazine | cover |
+| `dual-split` | Split、Comparison、Duality | split |
+| `terminal-list` | Terminal、Boot Sequence | bullets |
+| `divider-list` | Divider、Separated | bullets |
+| `impact-statement` | Statement、Quote、Big Number | statement |
+| `editorial-image` | Editorial、Portrait、Cutout | image-left／image-right |
+| `full-bleed` | Full Bleed、Gallery | full-bleed |
+
+従来の`creative-style.yaml`と`executable-style.yaml`は互換入力として残すが、新しいプロジェクトでは使用しない。
