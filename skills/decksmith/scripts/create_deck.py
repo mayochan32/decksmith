@@ -55,9 +55,14 @@ def resolve_presentations_skill_dir(explicit: Path | None = None) -> Path:
     if codex_home:
         candidates.append(("CODEX_HOME", Path(codex_home) / "skills" / "builtins" / "presentations"))
 
-    candidates.append(
-        ("Codexの標準配置", Path.home() / ".codex" / "skills" / "builtins" / "presentations")
-    )
+    try:
+        home = Path.home()
+    except RuntimeError:
+        home = None
+    if home is not None:
+        candidates.append(
+            ("Codexの標準配置", home / ".codex" / "skills" / "builtins" / "presentations")
+        )
 
     checked: list[str] = []
     for source, candidate in candidates:
