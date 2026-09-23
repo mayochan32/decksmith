@@ -24,12 +24,17 @@ class VersionTests(unittest.TestCase):
     def test_sync_and_mismatch_detection(self):
         with tempfile.TemporaryDirectory() as raw:
             root=Path(raw)
-            for name in (*METADATA,str(VERSION_FILE)):
+            for name in (*METADATA,str(VERSION_FILE),"VERSION"):
                 destination=root/name
                 destination.parent.mkdir(parents=True,exist_ok=True)
                 shutil.copy2(ROOT/name,destination)
             old=json.loads((root/"skills/decksmith/package-lock.json").read_text())["packages"]["node_modules/pptxgenjs"]
             self.assertEqual(set_version("v1.2.3",root),"v1.2.3")
+            self.assertEqual((root/"VERSION").read_text(),"v1.2.3\n")
+            (root/"VERSION").write_text("v9.0.0\n")
+            with self.assertRaisesRegex(ValueError,"mismatch: VERSION"):
+                check(root)
+            set_version("v1.2.3",root)
             self.assertEqual(json.loads((root/"skills/decksmith/package-lock.json").read_text())["packages"]["node_modules/pptxgenjs"],old)
             (root/VERSION_FILE).write_text("v1.2.4\n")
             with self.assertRaisesRegex(ValueError,"mismatch"):

@@ -18,37 +18,39 @@ Codex、Claude Code、Gemini CLI用のマニフェストを用意し、共通の
 
 YAMLの読み取りには同梱のPyYAML 6.0.3（純Python版、MIT）を使うため、ホストへの追加インストールは不要です。
 
-## 開発
+## 主な機能
 
-バージョンの正本は `skills/decksmith/VERSION`（`vx.y.z`）です。互換性を壊す変更はメジャー、互換性を保つ機能追加はマイナー、不具合修正はbugfixを上げます。メジャー更新時は下位2桁、マイナー更新時はbugfixを0へ戻します。
+### 原稿・スタイルからの資料作成
 
-```bash
-python3 scripts/release_version.py --check
-# 次版を決めたときだけ実行（例）
-python3 scripts/release_version.py --set v0.4.1
-```
+題材・対象読者・目的をチャットで伝えるか、`brief.md` に原稿や必須内容をまとめて指定できます。`style.yaml` でデザインを指定し、`decksmith.yaml` に制作条件を保存すれば、同じ条件で作り直せます。内部の配置・構成ファイルはAIが作るため、利用者が手作業で書く必要はありません。
 
-更新コマンドはVERSIONと各ホストのmanifest、npmのpackage/lockを同期します。JSONメタデータには互換性のためvを除いた数値を保存し、利用者への表示はv付きに統一します。依存ライブラリのバージョンは変更しません。配布時は不一致をエラーにし、配布ルートにもVERSIONを同梱します。Gitタグ作成・push・Release公開は自動では行いません。
+### サイズ・言語の指定
 
-AIが用意する資料プロジェクトはstyle.yaml（元の指定）、structure.yaml（内容）、scene.yaml（設計）、assets/（資料専用素材）です。仕様は[シーン仕様](skills/decksmith/references/deck-spec.md)を参照してください。
+既定は横長16:9・1920×1080pxです。YAMLやプロンプトで縦長・正方形・任意の幅と高さを指定できます。pxは設計座標とプレビュー画像のサイズを表します。
 
-```bash
-npm ci --prefix skills/decksmith --ignore-scripts --no-audit --no-fund
-python3 skills/decksmith/scripts/doctor.py
-python3 skills/decksmith/scripts/create_deck.py \
-  --scene project/scene.yaml --style project/style.yaml \
-  --structure project/structure.yaml --output project/output/deck.pptx
-```
+資料の言語は `ja`／`en` だけでなく、`日本語`／`english`／`イギリス英語` などでも指定できます。
 
-実行ファイルはPATHで検出します。任意でDECKSMITH_NODE、DECKSMITH_NODE_MODULES、DECKSMITH_SOFFICE、DECKSMITH_PDFTOPPMを指定できます。詳細は[実行環境](skills/decksmith/references/host-runtime.md)を参照。
+### 画像の利用と生成
 
-配布物は次のように作成します。hostはcodex、claude、geminiから選びます。開発用のサンプル、旧エンジン、node_modulesは含めません。依存は固定バージョンのロックファイルから導入します。
+提供画像は、画像認識が使えるAIが内容を確認し、スライドに合った位置へ配置します。配置や加工についての指定があれば優先します。
 
-```bash
-python3 scripts/package_plugin.py --host claude --output dist/claude
-```
+必要に応じて画像生成も使う `auto` と、指定された画像だけを使う `provided_only` を選べます。画像生成には利用環境の生成機能が必要です。利用できなければ、素材の追加や代案を案内します。
 
-PPTXとプレビュー、未確認状態のレビュー台帳を出力します。成功終了は視覚品質の合格を意味しません。AIがすべてのページを確認して修正します。
+### 外部サービス制限モード
+
+`privacy.mode: restricted` を指定すると、利用中のAIサービスの組み込み機能（画像生成を含む）とローカル処理だけを使い、別サービスへの送信・Web検索・外部素材取得は行いません。指定しなければ通常モードです。
+
+原稿・画像・プレビューは利用中のAIサービスへ送信され得ます。このモードはAIの操作を制限するもので、OSのクラウド同期や拡張の通信を遮断する機能ではありません。初回セットアップ時のダウンロードは対象外です。
+
+### 編集可能なPPTX・PDF・プレビュー
+
+本文や図形を編集可能なPowerPointとして出力します。画像素材そのものは画像として配置します。`output.pdf: true` を指定するとPDFも保存できます。
+
+全ページのプレビューを生成し、AIが文字切れ・重なり・内容を確認して修正します。既存の出力は上書きしません。ファイルの生成成功だけでは品質確認済みとは扱いません。閲覧環境でフォントや改行が変わる場合があるため、完成ファイルも確認してください。
+
+### バージョンの確認
+
+バージョンは `vx.y.z`（メジャー・マイナー・bugfix）形式です。配布物の `VERSION`、実行時の表示、生成結果の検証・レビュー記録で確認できます。バージョンだけを表示する `--version` の使い方は[利用ガイド](USER_GUIDE.md)に記載しています。
 
 ## 現在の範囲
 

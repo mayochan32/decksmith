@@ -18,6 +18,8 @@ def validate(value):
 
 def check(root=ROOT):
     value=validate((root/VERSION_FILE).read_text().strip())
+    if (root/"VERSION").read_text().strip() != value:
+        raise ValueError("Version mismatch: VERSION")
     for name in METADATA:
         data=json.loads((root/name).read_text())
         if data["version"] != value[1:]:
@@ -40,6 +42,7 @@ def set_version(value, root=ROOT):
     for name, content in updates.items():
         (root/name).write_text(content,encoding="utf-8")
     (root/VERSION_FILE).write_text(value+"\n",encoding="utf-8")
+    (root/"VERSION").write_text(value+"\n",encoding="utf-8")
     return check(root)
 
 
