@@ -25,6 +25,32 @@ class ProjectConfigTests(unittest.TestCase):
         self.assertEqual(config["privacy"]["mode"], "normal")
         self.assertEqual(config["images"]["mode"], "auto")
         self.assertFalse(config["output"]["pdf"])
+        self.assertEqual(config["images"], {"mode":"auto","amount":"normal","type":"auto","color":"color","plan":"show"})
+
+    def test_image_options(self):
+        options={"amount":("normal","more","less","none"),
+                 "type":("auto","illust","photo","icon","anime"),
+                 "color":("color","gray","monotone"),"plan":("show","confirm","skip")}
+        for name,values in options.items():
+            for value in values:
+                with self.subTest(name=name,value=value):
+                    result=self.read({"privacy":{"mode":"restricted"},"images":{"mode":"provided_only",name:value}})
+                    self.assertEqual(result["images"][name],value)
+                    self.assertEqual(result["images"]["mode"],"provided_only")
+                    self.assertEqual(result["privacy"]["mode"],"restricted")
+
+    def test_image_options_reject_invalid_values(self):
+        for name,values in {"amount":("多め","lots",False,None),
+                            "type":("illustration","photorealistic","イラスト",[]),
+                            "color":("grayscale","白黒",{}),"plan":("yes",True)}.items():
+            for value in values:
+                with self.subTest(name=name,value=value),self.assertRaisesRegex(SpecError,"images."+name):
+                    self.read({"images":{name:value}})
+
+    def test_image_options_real_yaml(self):
+        self.path.write_text("images:\n  amount: more\n  type: illust\n  color: gray\n  plan: confirm\n",encoding="utf-8")
+        self.assertEqual(resolve_config(self.path)["images"],
+                         {"mode":"auto","amount":"more","type":"illust","color":"gray","plan":"confirm"})
 
     def test_dimensions(self):
         for data, expected in (({"aspect_ratio":"9:16"},(1080,1920)),

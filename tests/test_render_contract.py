@@ -36,7 +36,7 @@ class RenderContractTests(unittest.TestCase):
             (p/"scene.yaml").write_text(json.dumps(scene))
             (p/"decksmith.yaml").write_text(json.dumps({"slide":{"width_px":1280,"height_px":720},
                 "input":{"style":"style.yaml"},"output":{"directory":"output","filename":"smoke.pptx"},
-                "language":"english","privacy":{"mode":"restricted"},"images":{"mode":"provided_only"}}))
+                "language":"english","privacy":{"mode":"restricted"},"images":{"mode":"provided_only","amount":"less","type":"icon","color":"monotone","plan":"skip"}}))
             output=p/"output"/"smoke.pptx"
             result=subprocess.run([sys.executable,str(SCRIPTS/"create_deck.py"),"--scene",str(p/"scene.yaml"),
                 "--structure",str(p/"structure.yaml"),
@@ -49,6 +49,8 @@ class RenderContractTests(unittest.TestCase):
             self.assertEqual(manifest["decksmith_version"],expected_version)
             self.assertEqual(manifest["project_settings"]["language"],"english")
             self.assertEqual(manifest["project_settings"]["privacy"]["mode"],"restricted")
+            self.assertEqual(manifest["project_settings"]["images"],
+                {"mode":"provided_only","amount":"less","type":"icon","color":"monotone","plan":"skip"})
             with ZipFile(output) as archive:
                 xml=archive.read("ppt/slides/slide1.xml")
                 root=ET.fromstring(xml)

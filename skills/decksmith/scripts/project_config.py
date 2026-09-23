@@ -23,7 +23,7 @@ def resolve_config(path=None, base=None):
     base = path.parent
     keys(data, "slide privacy output input images language", "config")
     fields = {"slide":"width_px height_px aspect_ratio", "privacy":"mode",
-              "output":"directory filename pdf", "input":"style brief", "images":"mode"}
+              "output":"directory filename pdf", "input":"style brief", "images":"mode amount type color plan"}
     for name, allowed in fields.items():
         keys(data.get(name, {}), allowed, name)
     slide = data.get("slide", {})
@@ -53,11 +53,21 @@ def resolve_config(path=None, base=None):
     elif h is None:
         h = max(1, round(w / ratio))
     privacy = data.get("privacy", {}).get("mode", "normal")
-    images = data.get("images", {}).get("mode", "auto")
+    image_options = {
+        "mode": ("auto", "provided_only"),
+        "amount": ("normal", "more", "less", "none"),
+        "type": ("auto", "illust", "photo", "icon", "anime"),
+        "color": ("color", "gray", "monotone"),
+        "plan": ("show", "confirm", "skip"),
+    }
+    images = {}
+    for name, allowed in image_options.items():
+        value = data.get("images", {}).get(name, allowed[0])
+        if value not in allowed:
+            raise SpecError("images." + name + " must be one of: " + ", ".join(allowed))
+        images[name] = value
     if privacy not in ("normal", "restricted"):
         raise SpecError("privacy.mode must be normal or restricted")
-    if images not in ("auto", "provided_only"):
-        raise SpecError("images.mode must be auto or provided_only")
     output = data.get("output", {})
     pdf = output.get("pdf", False)
     if type(pdf) is not bool:
@@ -80,7 +90,7 @@ def resolve_config(path=None, base=None):
     language = nonempty(data["language"], "language") if "language" in data else None
     return {"config_path":str(path) if path.is_file() else None,
             "canvas":{"width":w,"height":h}, "size_explicit":bool(slide),
-            "privacy":{"mode":privacy}, "images":{"mode":images}, "language":language,
+            "privacy":{"mode":privacy}, "images":images, "language":language,
             "input":inputs, "output":{"directory":local_path(output.get("directory", "output"), "output.directory"),
                                         "filename":filename, "pdf":pdf}}
 
