@@ -1,5 +1,5 @@
 {
   "name": "decksmith",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Interpret arbitrary style YAML and create editable PowerPoint presentations."
 }
