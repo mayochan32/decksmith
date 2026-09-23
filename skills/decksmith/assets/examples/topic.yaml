@@ -1,7 +1,0 @@
-title: DeckSmith MVP
-audience: 業務でPowerPointを作成する人
-objective: DeckSmithが独立した入力から編集可能なPowerPointを生成する仕組みを説明する
-language: ja-JP
-output_filename: decksmith-mvp.pptx
-constraints:
-  - 説明は簡潔にする

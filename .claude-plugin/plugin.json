@@ -1,0 +1,8 @@
+{
+  "name": "decksmith",
+  "version": "0.3.0",
+  "description": "Interpret arbitrary style YAML and create editable PowerPoint presentations.",
+  "author": {"name": "mayo"},
+  "license": "MIT",
+  "skills": "./skills/"
+}

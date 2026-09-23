@@ -1,66 +1,20 @@
-from __future__ import annotations
-
-import importlib.util
 import os
 import sys
-import tempfile
 import unittest
 from pathlib import Path
-from unittest import mock
+from unittest.mock import patch
+sys.path.insert(0,str(Path(__file__).parents[1]/"skills/decksmith/scripts"))
+from create_deck import executable, run, SpecError
 
-
-SCRIPTS = Path(__file__).parents[1] / "skills" / "decksmith" / "scripts"
-sys.path.insert(0, str(SCRIPTS))
-SPEC = importlib.util.spec_from_file_location("decksmith_create_deck", SCRIPTS / "create_deck.py")
-MODULE = importlib.util.module_from_spec(SPEC)
-assert SPEC.loader is not None
-SPEC.loader.exec_module(MODULE)
-
-
-class CreateDeckEnvironmentTests(unittest.TestCase):
-    def make_presentations_skill(self, root: Path) -> Path:
-        skill = root / "presentations"
-        marker = skill / MODULE.PRESENTATIONS_MARKER
-        marker.parent.mkdir(parents=True)
-        marker.touch()
-        return skill
-
-    def test_explicit_presentations_directory(self):
-        with tempfile.TemporaryDirectory() as raw:
-            skill = self.make_presentations_skill(Path(raw))
-            self.assertEqual(MODULE.resolve_presentations_skill_dir(skill), skill.resolve())
-
-    def test_environment_presentations_directory(self):
-        with tempfile.TemporaryDirectory() as raw:
-            skill = self.make_presentations_skill(Path(raw))
-            with mock.patch.dict(
-                os.environ,
-                {"DECKSMITH_PRESENTATIONS_SKILL_DIR": str(skill)},
-                clear=True,
-            ):
-                self.assertEqual(MODULE.resolve_presentations_skill_dir(), skill.resolve())
-
-    def test_current_runtime_environment_names(self):
-        with tempfile.TemporaryDirectory() as raw:
-            runtime = Path(raw) / "python"
-            runtime.touch()
-            with mock.patch.dict(
-                os.environ,
-                {"CODEX_PRIMARY_RUNTIME_PYTHON": str(runtime)},
-                clear=True,
-            ):
-                self.assertEqual(MODULE.absolute_env_path("RUNTIME_PYTHON"), runtime)
-
-    def test_missing_home_does_not_block_environment_override(self):
-        with tempfile.TemporaryDirectory() as raw:
-            skill = self.make_presentations_skill(Path(raw))
-            with mock.patch.dict(
-                os.environ,
-                {"DECKSMITH_PRESENTATIONS_SKILL_DIR": str(skill)},
-                clear=True,
-            ), mock.patch.object(MODULE.Path, "home", side_effect=RuntimeError):
-                self.assertEqual(MODULE.resolve_presentations_skill_dir(), skill.resolve())
-
-
-if __name__ == "__main__":
-    unittest.main()
+class PortableEnvironmentTests(unittest.TestCase):
+    def test_path_discovery(self):
+        with patch.dict(os.environ,{},clear=True), patch("shutil.which",return_value="/bin/node"):
+            self.assertEqual(executable("node","DECKSMITH_NODE"),"/bin/node")
+    def test_explicit_override(self):
+        with patch.dict(os.environ,{"DECKSMITH_NODE":sys.executable},clear=True):
+            self.assertEqual(executable("node","DECKSMITH_NODE"),sys.executable)
+    def test_missing_runtime(self):
+        with patch.dict(os.environ,{},clear=True), patch("shutil.which",return_value=None):
+            with self.assertRaises(SpecError): executable("node","DECKSMITH_NODE")
+    def test_command_failure(self):
+        with self.assertRaises(SpecError): run([sys.executable,"-c","raise SystemExit(2)"])

@@ -1,4 +1,7 @@
 __pycache__/
+node_modules/
+.npm-cache/
+dist/
 *.py[cod]
 .DS_Store
 output/

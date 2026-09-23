@@ -2,4 +2,4 @@ interface:
   display_name: "DeckSmith"
   short_description: "好みのスタイルで編集可能なPowerPointを生成"
   brand_color: "#315CFF"
-  default_prompt: "$decksmith を使い、題材・構成・スタイルを個別に確認し、スタイルは全体設定とレイアウトカタログを持つ記事形式のYAMLにして、編集可能なPowerPointを作成してください。"
+  default_prompt: "$decksmith を使い、指定された題材・構成・任意のスタイルYAMLを解釈し、内容に合わせてページを設計して、編集可能なPowerPointを作成してください。"

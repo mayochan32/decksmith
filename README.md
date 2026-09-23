@@ -1,91 +1,47 @@
 # DeckSmith
 
-DeckSmithは、「題材」「構成」「スタイル」を個別に指定し、編集可能なPowerPointファイルを生成するChatGPT／Codex向けプラグインです。
+任意のスタイルYAMLをAIが解釈し、ページごとに設計して編集可能なPowerPointを作るプラグインです。名前付きのスタイルプリセットは持ちません。
 
-スタイルは、[指定方式の参考記事](https://qiita.com/mayochan32/items/18323a3f5201d08e8afc)と同じ考え方で、全体設定とレイアウトカタログを1つのYAMLに記述します。推論と画像生成には、サインイン中のChatGPT／Codexワークスペースの機能を使うため、APIキーやローカルGPUは必要ありません。
+初めて使う方は **[利用ガイド：VS CodeのCodex／Claude Codeから使う](USER_GUIDE.md)** を参照してください。導入、スタイルYAMLの用意、依頼例、画像生成、修正方法を説明しています。
 
-## できること
+## 生成の仕組み
 
-- 題材・構成・スタイルを対話形式で個別に指定
-- 記事形式の詳細なスタイルYAMLを保存し、別の資料へ再利用
-- 参考画像から同じ形式のスタイルYAMLを作成
-- Codex内蔵の画像生成を利用
-- YAMLから再現性のあるPPTXを生成
-- 文字や情報を表すオブジェクトを編集可能な状態で保持
-- PPTXの構造検査と、全スライドのPNGプレビュー生成
-- GitHub経由で社内配布・一般公開へ拡張
+利用者が題材・構成・スタイルを指定すると、プラグインのSkillを読むAIが内容を整理し、画像素材と各要素の配置を設計します。描画処理は、その設計を文字・画像・図形・パスとしてPPTXへ変換します。スタイル名による固定構図の選択は行いません。
 
-## 3つの入力
+意味解釈はホストのAIが行います。Pythonを単独で実行して自由記述YAMLからデザインを推論する製品ではありません。配布物にはAIの制作手順、シーン仕様、描画処理、検証処理を含めます。
 
-1. **題材**：何を、誰に、何のために伝えるか
-2. **構成**：スライド数、話の順序、各スライドの役割
-3. **スタイル**：トーン、キービジュアル、配色、写真、書体、共通ルール、レイアウトバリエーション
+## 利用環境
 
-標準のプロジェクトファイルは`topic.yaml`、`structure.yaml`、`style.yaml`の3つです。`style.yaml`は人が読んで再利用できる仕様書であり、DeckSmithがPPTX生成用の数値と規則へ自動変換します。
+Python 3.9+、Node.js 18+を使用します。PPTX描画はPptxGenJS、プレビューはLibreOfficeとPopplerです。OpenAI専用ライブラリは不要です。画像生成は利用可能なホスト機能または許可された外部サービスに接続し、結果のPNG/JPEGを取り込みます。各社の画像APIを自動で呼ぶ機能はまだありません。
 
-## ChatGPT／Codexでの使い方
+Codex、Claude Code、Gemini CLI用のマニフェストを用意し、共通のSkillとエンジンを配布します。ブラウザー版への直接導入は対象外。Claude Code・Gemini CLI内での一連の制作は未検証です。
 
-通常は自然言語で依頼するだけです。Presentationsの保存場所やAPIキーを入力する必要はありません。
+YAMLの読み取りには同梱のPyYAML 6.0.3（純Python版、MIT）を使うため、ホストへの追加インストールは不要です。
 
-```text
-DeckSmithでPowerPointを作って。
-題材：生成AI導入の社内提案
-構成：課題、解決策、導入計画、費用対効果
-スタイル：添付した参考画像を分析し、記事形式のスタイルYAMLとして保存して使う
-```
+## 開発
 
-スタイルYAMLを直接指定する場合は、次の大項目を含めます。完全な例は[`article-style.yaml`](skills/decksmith/assets/examples/article-style.yaml)を参照してください。
-
-```yaml
-Style: Electric Blueprint
-Overall Design Settings:
-  Tone: "知的で未来的。高いコントラストで整理して見せる。"
-  Key Visual:
-    Motif: "暗い設計図面に発光する情報レイヤーを重ねる。"
-  Color Palette:
-    Background: "#0B1020 (Deep Navy)"
-    Main Text: "#F4F7FF (Soft White)"
-    Accent: "#52E5FF (Electric Cyan)"
-  Photography Style:
-    - "暗い背景に被写体を明瞭に配置する。"
-  Typography:
-    Display Heading: "Massive condensed sans-serif."
-    Body: "Clean sans-serif."
-  Common Layout Rules:
-    Lines: "Use thin cyan frame lines."
-
-Layout Variations (Catalog):
-  - Type: "Mega Title Cover"
-    Applies To: [cover]
-    Design: "A massive title occupies most of the canvas."
-```
-
-## 開発者向け：付属サンプルの実行
-
-Codexのプレゼンテーション用ランタイムが利用できる環境で、`skills/decksmith`から実行します。
+AIが用意する資料プロジェクトはstyle.yaml（元の指定）、structure.yaml（内容）、scene.yaml（設計）、assets/（資料専用素材）です。仕様は[シーン仕様](skills/decksmith/references/deck-spec.md)を参照してください。
 
 ```bash
-"${RUNTIME_PYTHON:-${CODEX_PRIMARY_RUNTIME_PYTHON:-python3}}" scripts/create_deck.py \
-  --topic assets/examples/topic.yaml \
-  --structure assets/examples/structure.yaml \
-  --style assets/examples/article-style.yaml \
-  --output output/decksmith-mvp.pptx
+npm ci --prefix skills/decksmith --ignore-scripts --no-audit --no-fund
+python3 skills/decksmith/scripts/doctor.py
+python3 skills/decksmith/scripts/create_deck.py \
+  --scene project/scene.yaml --style project/style.yaml \
+  --structure project/structure.yaml --output project/output/deck.pptx
 ```
 
-PPTXと、目視確認用の`.preview`ディレクトリが生成されます。既存の出力ファイルは上書きしません。
+実行ファイルはPATHで検出します。任意でDECKSMITH_NODE、DECKSMITH_NODE_MODULES、DECKSMITH_SOFFICE、DECKSMITH_PDFTOPPMを指定できます。詳細は[実行環境](skills/decksmith/references/host-runtime.md)を参照。
 
-Presentationsの場所とCodexランタイムは自動検出します。特殊な開発環境で自動検出できない場合に限り、`DECKSMITH_PRESENTATIONS_SKILL_DIR`環境変数、または`--presentations-skill-dir`オプションで明示できます。従来の`--creative-style`と`--executable-style`の組も互換用として利用できますが、新規利用では`--style`を使用してください。
+配布物は次のように作成します。hostはcodex、claude、geminiから選びます。開発用のサンプル、旧エンジン、node_modulesは含めません。依存は固定バージョンのロックファイルから導入します。
 
-## 日本語フォントについて
+```bash
+python3 scripts/package_plugin.py --host claude --output dist/claude
+```
 
-日本語テキストは、編集可能な文字としてPPTXに保存されます。ただし、PNGプレビューで正確に検査するには、実行環境にCJKフォントが必要です。利用可能な日本語フォントがない環境ではPPTX内の文字は保持されますが、プレビューの日本語部分を視覚検査済みとは扱いません。
+PPTXとプレビュー、未確認状態のレビュー台帳を出力します。成功終了は視覚品質の合格を意味しません。AIがすべてのページを確認して修正します。
 
-一般公開前には、Noto Sans JPなど再配布可能なフォントについて、ライセンス、ランタイムへの登録、PowerPoint側の代替表示を確認します。
+## 現在の範囲
 
-## 機密情報の扱い
+新しいシーン方式の初期実装です。文字の部分強調、要素別の書体、任意配置、回転、重なり、画像、基本図形、直線パスを扱います。専用のネイティブ表・グラフ要素やマスクは未実装で、未対応の指定を黙って置換せずエラーにします。
 
-社内テンプレート、ロゴ、機密資料を公開リポジトリや公開プラグインへ含めないでください。会社が許可したワークスペース、または会社専用の非公開リポジトリで管理します。入力内容には、サインイン先のChatGPTワークスペースに設定されたデータ処理方針が適用されます。
-
-## 現在の位置づけ
-
-記事形式のスタイルYAML、基本レイアウト、PPTX生成、プレビュー、構造検査までを実装したMVPです。現時点のレイアウトカタログは、Mega Title、Dual Split、Terminal／Divider List、Impact Statement、Editorial Image、Full Bleedを解釈します。記事内の自由記述を完全に再現するものではないため、一般公開前にスタイル変換規則と日本語フォント対応を拡充します。
+旧layout/composition形式は廃止しました。過去の制作物は残しますが、配布プラグインから呼び出しません。参考サンプルは評価用であり、実行時のプリセットではありません。

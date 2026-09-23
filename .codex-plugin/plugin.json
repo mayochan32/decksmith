@@ -1,6 +1,6 @@
 {
   "name": "decksmith",
-  "version": "0.2.0+codex.20260916",
+  "version": "0.3.0+codex.20260923052852",
   "description": "\u984c\u6750\u30fb\u69cb\u6210\u30fb\u30b9\u30bf\u30a4\u30eb\u3092\u500b\u5225\u306b\u6307\u5b9a\u3057\u3001\u7de8\u96c6\u53ef\u80fd\u306aPowerPoint\u3092\u751f\u6210\u3057\u307e\u3059\u3002",
   "author": {
     "name": "mayo"

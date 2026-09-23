@@ -1,70 +1,55 @@
-# DeckSmithプロジェクトファイル仕様
+# 入力とシーン仕様 1.0
 
-利用者は自然言語で入力する。DeckSmithは、再現と検証ができるように内容を3つのYAMLファイルへ変換する。
+style.yamlは利用者の任意のYAMLマッピング。キー名も言語も制限しない。内容はAIが解釈する。
 
-## `topic.yaml`
-
-```yaml
-title: 必須の資料タイトル
-audience: 必須の対象者説明
-objective: 必須の意思決定または学習目標
-language: ja-JP
-output_filename: deck.pptx
-facts:
-  - claim: 任意の事実情報
-    source: https://example.com/source
-constraints:
-  - 任意の内容上の制約
-```
-
-## `structure.yaml`
-
-MVPでは、`cover`、`statement`、`bullets`、`split`、`image-left`、`image-right`、`full-bleed`、`closing`のレイアウトを使用できる。
-
+structure.yaml:
 ```yaml
 slides:
-  - id: cover
-    layout: cover
-    title: 必須のタイトル
-    subtitle: 任意のサブタイトル
-    notes: 任意の発表者ノート
+  - id: opening
+    purpose: 問いを示す
+    required_text: ["伝えたい問い", "必ず残す説明"]
+    notes: 根拠や補足
     citations: []
+```
+required_textは連続する文字列単位。改行や空白の追加は可能。数値・重要ラベルの欠落を避けるため元の内容を適切な単位で記録する。
 
-  - id: problem
-    layout: image-right
-    title: 必須のタイトル
-    body: 任意の本文
-    bullets:
-      - 任意の箇条書き
-    image:
-      path: assets/problem.png
-      alt: アクセシビリティ用の画像説明
-      fit: cover
-      prompt: 再現用に保存する画像生成プロンプト
-    citations:
-      - https://example.com/source
-
-  - id: comparison
-    layout: split
-    title: 必須のタイトル
-    left:
-      heading: 現状
-      items:
-        - 1つ目の要点
-    right:
-      heading: 提案後
-      items:
-        - 1つ目の要点
+scene.yaml:
+```yaml
+schema_version: "1.0"
+style_sha256: <style.yamlのバイト列のSHA-256>
+structure_sha256: <structure.yamlのバイト列のSHA-256>
+canvas: {width: 1280, height: 720}
+requirements:
+  - source: /配色/主役
+    interpretation: 見出しを指定された朱色で描く
+    status: implemented
+    targets: [opening/title]
+slides:
+  - id: opening
+    background: "#F2F0E9"
+    elements:
+      - id: title
+        type: text
+        x: 60
+        y: 80
+        width: 1100
+        height: 200
+        text: 伝えたい問い
+        font: <実環境で確認した書体>
+        size: 72
+        color: "#C92C1C"
+        bold: true
 ```
 
-各スライドには、一意で変化しない`id`、対応レイアウト、`title`が必要である。相対パスで指定した画像は、`structure.yaml`が置かれているディレクトリを基準に解決する。
+すべての座標とサイズは96DPIのpx。キャンバスを固定しない。elementsの順番が背面から前面への重なり順。全要素の共通項目はid/type/x/y/width/height。任意でrotation（度）、overflow_reason（意図的なはみ出しの説明）。
 
-## スタイルファイル
+- text: textまたはrunsの片方。font/size/colorが必須。bold/italic/align（left/center/right/justify）/vertical（top/middle/bottom）/line_spacingが任意。runsは{text, font?, size?, color?, bold?, italic?}の配列で、部分強調と書体の混在を表す。自動縮小しない。
+- shape: geometryはrect/roundRect/ellipse/line/triangle/rightArrow。fill/strokeは#RRGGBB、#RRGGBBAAまたはnone。stroke_width/radiusはpx。水平線は高さを小さい正数にする。
+- path: pointsは要素のローカル座標の[x,y]配列。closed、fill、stroke、stroke_widthが任意。正確な関係線・編集可能な図解のための機能。
+- image: scene.yamlのディレクトリ内の相対path、altが必須。PNG/JPEG。WebP等は事前にPNGへ変換する。fitはcontain（既定）またはcover。promptを記録可能。回転は共通のrotationを使う。
 
-[スタイルシステム](style-system.md)に従い、全体設定とレイアウトカタログを`style.yaml`へ保存する。描画に必要な具体値はDeckSmithが内部でコンパイルする。
+未知のキー/要素はエラー。表やグラフの専用要素、クリッピングマスク、グループ変換はこの初期アダプターでは未実装。要求された場合は対応を追加する。黙って無視しない。グループ相当の配置は各要素の明示座標で表現できる。
 
-## 生成される正規化済み仕様
+requirementsはstyle.yamlのすべての末端値を重複なく網羅する。not_applicableの場合はreasonを記録し、AIが妥当性を確認する。ソース指紋と台帳は追跡可能性のためであり、AIによる意味理解の正しさを自動保証しない。
 
-`scripts/create_deck.py`は3つのYAMLを検証して統合し、非公開のビルドディレクトリへ正規化済みJSONを生成する。JavaScript製ビルダーは、そのJSONだけを入力として使用する。
-
-画像ファイルが存在しない場合、最終生成は失敗する。未生成画像を含む下書きが必要な場合だけ、`--allow-missing-images`を明示的に指定する。
+以前のlayout/compositionによる形式は廃止した。旧資料を作り直す場合は元の題材・YAMLを読んで新しいstructureとsceneを設計する。
