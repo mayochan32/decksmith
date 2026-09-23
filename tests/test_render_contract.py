@@ -2,6 +2,7 @@
 import base64
 import json
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import sys
@@ -33,11 +34,21 @@ class RenderContractTests(unittest.TestCase):
                     {"id":"path","type":"path","x":100,"y":440,"width":500,"height":100,"points":[[0,0],[250,100],[500,0]],"stroke":"#C8102E","stroke_width":3}
                 ]}]}
             (p/"scene.yaml").write_text(json.dumps(scene))
+            (p/"decksmith.yaml").write_text(json.dumps({"slide":{"width_px":1280,"height_px":720},
+                "input":{"style":"style.yaml"},"output":{"directory":"output","filename":"smoke.pptx"},
+                "language":"english","privacy":{"mode":"restricted"},"images":{"mode":"provided_only"}}))
             output=p/"output"/"smoke.pptx"
             result=subprocess.run([sys.executable,str(SCRIPTS/"create_deck.py"),"--scene",str(p/"scene.yaml"),
-                "--style",str(p/"style.yaml"),"--structure",str(p/"structure.yaml"),"--output",str(output),
+                "--structure",str(p/"structure.yaml"),
                 "--pptx-only"],capture_output=True,text=True)
             self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            manifest=json.loads((output.with_suffix(".preview")/"review-manifest.json").read_text())
+            expected_version=(SCRIPTS.parent/"VERSION").read_text().strip()
+            self.assertIn("DeckSmith " + expected_version,result.stderr)
+            self.assertEqual(json.loads(result.stdout)["decksmith_version"],expected_version)
+            self.assertEqual(manifest["decksmith_version"],expected_version)
+            self.assertEqual(manifest["project_settings"]["language"],"english")
+            self.assertEqual(manifest["project_settings"]["privacy"]["mode"],"restricted")
             with ZipFile(output) as archive:
                 xml=archive.read("ppt/slides/slide1.xml")
                 root=ET.fromstring(xml)
@@ -51,3 +62,19 @@ class RenderContractTests(unittest.TestCase):
                 tree=root.find(".//p:spTree",ns)
                 drawing_types=[e.tag.rsplit("}",1)[-1] for e in tree if e.tag.rsplit("}",1)[-1] in ("sp","pic")]
                 self.assertEqual(drawing_types,["sp","pic","sp","sp"])
+            if shutil.which(os.environ.get("DECKSMITH_SOFFICE", "soffice")) and shutil.which("pdftoppm"):
+                config=json.loads((p/"decksmith.yaml").read_text())
+                config["output"].update(filename="with-pdf.pptx",pdf=True)
+                (p/"decksmith.yaml").write_text(json.dumps(config))
+                command=[sys.executable,str(SCRIPTS/"create_deck.py"),"--scene",str(p/"scene.yaml"),
+                         "--structure",str(p/"structure.yaml")]
+                result=subprocess.run(command,capture_output=True,text=True)
+                self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+                pdf=p/"output/with-pdf.pdf"
+                self.assertTrue(pdf.read_bytes().startswith(b"%PDF"))
+                png=(p/"output/with-pdf.preview/slide-01.png").read_bytes()
+                self.assertEqual((int.from_bytes(png[16:20],"big"),int.from_bytes(png[20:24],"big")),(1280,720))
+                original=pdf.read_bytes()
+                result=subprocess.run(command,capture_output=True,text=True)
+                self.assertNotEqual(result.returncode,0)
+                self.assertEqual(pdf.read_bytes(),original)

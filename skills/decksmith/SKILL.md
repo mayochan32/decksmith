@@ -9,11 +9,17 @@ description: 題材・構成・任意のスタイルYAMLから、AIがページ�
 
 ## 実行環境
 
+実行するSkillのscripts/version.pyまたはdoctor.pyから実際のバージョンを取得し、制作開始時に「DeckSmith vX.Y.Zで作成します」と利用者へ表示する。チャット履歴の版番号を使わない。
+
+制作依頼を受けたら、ツール利用前に[制作設定](references/project-settings.md)を読み、decksmith.yamlとプロンプトのprivacy/images/language/入出力/サイズを解決する。restrictedでは利用中のAIサービスの組み込み画像生成とローカル処理は許可するが、別サービス・Web検索・外部取得は使わない。provided_onlyでは画像生成もしない。この制約は後述の一般的な画像生成手順より優先する。
+
 最初に[実行環境](references/host-runtime.md)を読み、scripts/doctor.pyで依存を確認する。共通エンジンはPythonとNode.jsを使い、Codex・Claude Code・Gemini CLIで同じシーンを描画する。別のPresentations Skillや特定AIのSDKは必須にしない。
 
 画像が必要ならホストの画像生成機能を確認して使用する。外部APIキーを前提にしない。必要な機能がない場合は、完成扱いせず具体的な制約を説明する。開発チャットの履歴、開発者の素材、リポジトリのartifacts/には依存しない。
 
 ## 制作
+
+サイズ指定がなければ横長16:9・1920×1080pxで制作する。YAMLやプロンプトにサイズ・縦横比・向きの指定があれば既定値より優先し、設計前に解釈してscene.canvasへ明記する。寸法の補完と矛盾の扱いは[シーン仕様](references/deck-spec.md)の「スライドサイズ」に従う。確定した寸法を利用者へ伝え、そのキャンバスに合わせて素材・文字・図形を設計する。
 
 1. 題材・構成・スタイルを依頼から読み取る。指定済みなら再質問せず進む。参考資料は実際に見て、内容の資料かデザインの資料かを区別する。
 2. 元のスタイルYAMLをstyle.yamlとして保持する。独自キーや日本語の記述を、既知のキー名へ書き換えて意味を失わせない。[解釈と設計](references/style-system.md)を読む。
@@ -22,7 +28,7 @@ description: 題材・構成・任意のスタイルYAMLから、AIがページ�
 5. 必要な素材を資料内のassets/へ生成・保存する。被写体、配置先、文字安全域、透過、質感を具体的に指定する。事実を示す画像は提供資料を使う。写真や装飾の生成画像に本文や数値を焼き込まない。
 6. [シーン仕様](references/deck-spec.md)に従いscene.yamlを作る。自由な位置・寸法・重なり・回転・文字組みを要素単位で指定する。これはAIが作る内部ファイルであり、利用者に書かせない。初期アダプターはtext/shape/path/imageに対応する。ネイティブ表・グラフ等を必要とする依頼では、アダプターを実装・検証してから進め、画像化や箇条書きへの置換で済ませない。
 7. 元ファイルのSHA-256をsceneへ記録する。元のYAMLが変わったら必ず再解釈して設計を更新する。ハッシュだけを更新して流用しない。
-8. このSkillのscripts/create_deck.pyを実行する。
+8. このSkillのscripts/create_deck.pyを実行する。設定はsceneと同じフォルダーのdecksmith.yamlを自動検出する。別ファイルや解決済み設定は--configで渡す。input.style、output.filenameが設定済みなら--style、--outputは省略できる。
 
    ```bash
    python3 <skill-directory>/scripts/create_deck.py \

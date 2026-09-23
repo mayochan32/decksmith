@@ -38,6 +38,24 @@ class SceneTests(unittest.TestCase):
         self.scene["slides"][0]["elements"][0].update(x=50,y=50,width=1100,size=42)
         result=self.compile()
         self.assertEqual(result["slides"][0]["elements"][0]["x"],50)
+    def test_default_canvas_is_full_hd(self):
+        del self.scene["canvas"]
+        self.assertEqual(self.compile()["canvas"], {"width":1920,"height":1080})
+
+    def test_explicit_canvas_is_preserved(self):
+        for width,height in ((1920,1080),(1080,1920),(1440,1080),(1600,1600)):
+            with self.subTest(width=width,height=height):
+                self.scene["canvas"]={"width":width,"height":height}
+                self.scene["slides"][0]["elements"][0].update(x=20,y=20)
+                self.assertEqual(self.compile()["canvas"],self.scene["canvas"])
+
+    def test_invalid_canvas_is_not_defaulted(self):
+        for canvas in (None,{}, {"width":1920}, {"width":0,"height":1080}):
+            with self.subTest(canvas=canvas):
+                self.scene["canvas"]=canvas
+                with self.assertRaises(M.SpecError):
+                    self.compile()
+
     def test_no_fifth_item_truncation(self):
         self.scene["slides"][0]["elements"][0]["text"]="項目1項目2項目3項目4"
         with self.assertRaisesRegex(M.SpecError,"missing editable content"):

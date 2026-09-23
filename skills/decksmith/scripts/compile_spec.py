@@ -90,7 +90,7 @@ def compile_scene(scene_path, style_path, structure_path):
     for name, source in (("style",style_path),("structure",structure_path)):
         if scene.get(name+"_sha256") != source_hash(source):
             raise SpecError(f"{name} changed or missing fingerprint; reinterpret before rendering")
-    canvas = scene.get("canvas",{})
+    canvas = scene.setdefault("canvas", {"width": 1920, "height": 1080})
     keys(canvas,"width height","canvas")
     for axis in ("width","height"):
         number(canvas.get(axis),"canvas."+axis,1)

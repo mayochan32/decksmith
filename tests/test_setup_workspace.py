@@ -70,6 +70,7 @@ class WorkspaceSetupTests(unittest.TestCase):
             base = Path(raw)
             for host in ("codex", "claude", "gemini"):
                 distribution = package(host, base / host)
+                self.assertEqual((distribution/"VERSION").read_text(),(distribution/"skills/decksmith/VERSION").read_text())
                 self.assertIn("18323a3f5201d08e8afc", (distribution / "USER_GUIDE.md").read_text())
                 workspace = base / (host + " workspace")
                 workspace.mkdir()
@@ -79,3 +80,7 @@ class WorkspaceSetupTests(unittest.TestCase):
                 ], capture_output=True, text=True)
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual(len(json.loads(result.stdout)["skills"]), 2)
+                installed=Path(json.loads(result.stdout)["skills"][0])
+                version=subprocess.run([sys.executable,str(installed/"scripts/create_deck.py"),"--version"],capture_output=True,text=True)
+                self.assertEqual(version.returncode,0,version.stderr)
+                self.assertEqual(version.stdout.strip(),"DeckSmith " + (distribution/"VERSION").read_text().strip())

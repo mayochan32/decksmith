@@ -20,6 +20,16 @@ YAMLの読み取りには同梱のPyYAML 6.0.3（純Python版、MIT）を使う�
 
 ## 開発
 
+バージョンの正本は `skills/decksmith/VERSION`（`vx.y.z`）です。互換性を壊す変更はメジャー、互換性を保つ機能追加はマイナー、不具合修正はbugfixを上げます。メジャー更新時は下位2桁、マイナー更新時はbugfixを0へ戻します。
+
+```bash
+python3 scripts/release_version.py --check
+# 次版を決めたときだけ実行（例）
+python3 scripts/release_version.py --set v0.4.1
+```
+
+更新コマンドはVERSIONと各ホストのmanifest、npmのpackage/lockを同期します。JSONメタデータには互換性のためvを除いた数値を保存し、利用者への表示はv付きに統一します。依存ライブラリのバージョンは変更しません。配布時は不一致をエラーにし、配布ルートにもVERSIONを同梱します。Gitタグ作成・push・Release公開は自動では行いません。
+
 AIが用意する資料プロジェクトはstyle.yaml（元の指定）、structure.yaml（内容）、scene.yaml（設計）、assets/（資料専用素材）です。仕様は[シーン仕様](skills/decksmith/references/deck-spec.md)を参照してください。
 
 ```bash

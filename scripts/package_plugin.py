@@ -2,13 +2,16 @@
 import argparse
 from pathlib import Path
 import shutil
+from release_version import check
 
 def package(host,output):
     root=Path(__file__).resolve().parents[1]
+    check(root)
     target=output.resolve()/"decksmith"
     if target.exists(): raise ValueError("Refusing to overwrite package: "+str(target))
     manifest={"codex":".codex-plugin","claude":".claude-plugin","gemini":"gemini-extension.json"}[host]
     target.mkdir(parents=True)
+    shutil.copy2(root/"skills/decksmith/VERSION",target/"VERSION")
     shutil.copytree(root/"skills",target/"skills",ignore=shutil.ignore_patterns("node_modules","__pycache__","*.pyc"))
     source=root/manifest
     if source.is_dir(): shutil.copytree(source,target/manifest)

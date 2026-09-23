@@ -27,7 +27,7 @@ def setup(workspace, host, dry_run=False):
         for target in targets:
             target.parent.mkdir(parents=True,exist_ok=True)
             shutil.copytree(source,target,ignore=shutil.ignore_patterns("node_modules","__pycache__","*.pyc",".DS_Store"))
-    return {"dry_run":dry_run,"workspace":str(workspace),"skills":[str(p) for p in targets],
+    return {"decksmith_version":(source/"VERSION").read_text().strip(),"dry_run":dry_run,"workspace":str(workspace),"skills":[str(p) for p in targets],
             "next":"Install Node dependencies in each copied skill, run doctor.py, then start a new extension chat."}
 
 def main():
