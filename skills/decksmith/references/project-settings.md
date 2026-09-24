@@ -72,4 +72,6 @@ brief.mdのページ別の有無・量・種類・色調・配置指定は、そ
 
 ## 出力ファイル
 
-output.pdf=trueならPPTXと同名PDFを保存。falseでも品質確認用PNGは作る。PDF・PPTX・プレビューの既存出力は上書きしない。filenameは.pptx付きでディレクトリー成分なし。input.briefを読んで内容を設計し、input.styleをデザインに適用する。描画処理そのものは原稿の要約や翻訳を行わない。
+output.rendererはlibreoffice（既定・LibreOffice+Poppler）、powerpoint（Windowsのみ・デスクトップ版PowerPoint）、none（Windows/Mac・変換ソフト不要）。プロンプトの「PowerPointで確認」はpowerpoint、「PPTXだけ、プレビュー不要」はnoneとして記録する。PPTX描画方式そのものは変わらない。明示CLI --rendererを優先し、--pptx-onlyはnoneの別名。失敗時に自動で別方式へ切り替えない。
+
+output.pdf=trueならPPTXと同名PDFを保存。none以外はfalseでも品質確認用PNGを作る。noneとpdf=trueは矛盾でエラー。noneでも同名.preview/に検証・レビューJSONは残すが画像は作らず、not_visually_reviewedとして納品する。PDF・PPTX・記録フォルダーの既存出力は上書きしない。filenameは.pptx付きでディレクトリー成分なし。input.briefを読んで内容を設計し、input.styleをデザインに適用する。描画処理そのものは原稿の要約や翻訳を行わない。

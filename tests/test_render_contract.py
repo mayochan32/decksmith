@@ -35,18 +35,21 @@ class RenderContractTests(unittest.TestCase):
                 ]}]}
             (p/"scene.yaml").write_text(json.dumps(scene))
             (p/"decksmith.yaml").write_text(json.dumps({"slide":{"width_px":1280,"height_px":720},
-                "input":{"style":"style.yaml"},"output":{"directory":"output","filename":"smoke.pptx"},
+                "input":{"style":"style.yaml"},"output":{"directory":"output","filename":"smoke.pptx","renderer":"none"},
                 "language":"english","privacy":{"mode":"restricted"},"images":{"mode":"provided_only","amount":"less","type":"icon","color":"monotone","plan":"skip"}}))
             output=p/"output"/"smoke.pptx"
             result=subprocess.run([sys.executable,str(SCRIPTS/"create_deck.py"),"--scene",str(p/"scene.yaml"),
-                "--structure",str(p/"structure.yaml"),
-                "--pptx-only"],capture_output=True,text=True)
+                "--structure",str(p/"structure.yaml")],capture_output=True,text=True,
+                env={**os.environ,"DECKSMITH_SOFFICE":"missing-soffice","DECKSMITH_PDFTOPPM":"missing-pdftoppm"})
             self.assertEqual(result.returncode,0,result.stdout+result.stderr)
             manifest=json.loads((output.with_suffix(".preview")/"review-manifest.json").read_text())
             expected_version=(SCRIPTS.parent/"VERSION").read_text().strip()
             self.assertIn("DeckSmith " + expected_version,result.stderr)
             self.assertEqual(json.loads(result.stdout)["decksmith_version"],expected_version)
             self.assertEqual(manifest["decksmith_version"],expected_version)
+            self.assertEqual(manifest["status"],"not_visually_reviewed")
+            self.assertIsNone(json.loads(result.stdout)["preview"])
+            self.assertFalse(list(output.with_suffix(".preview").glob("*.png")))
             self.assertEqual(manifest["project_settings"]["language"],"english")
             self.assertEqual(manifest["project_settings"]["privacy"]["mode"],"restricted")
             self.assertEqual(manifest["project_settings"]["images"],
@@ -64,9 +67,12 @@ class RenderContractTests(unittest.TestCase):
                 tree=root.find(".//p:spTree",ns)
                 drawing_types=[e.tag.rsplit("}",1)[-1] for e in tree if e.tag.rsplit("}",1)[-1] in ("sp","pic")]
                 self.assertEqual(drawing_types,["sp","pic","sp","sp"])
-            if shutil.which(os.environ.get("DECKSMITH_SOFFICE", "soffice")) and shutil.which("pdftoppm"):
+            powerpoint_test=os.environ.get("DECKSMITH_POWERPOINT_TEST")=="1"
+            if powerpoint_test:
+                self.assertEqual(sys.platform,"win32","PowerPoint integration test needs native Windows")
+            if powerpoint_test or (shutil.which(os.environ.get("DECKSMITH_SOFFICE", "soffice")) and shutil.which("pdftoppm")):
                 config=json.loads((p/"decksmith.yaml").read_text())
-                config["output"].update(filename="with-pdf.pptx",pdf=True)
+                config["output"].update(filename="with-pdf.pptx",pdf=True,renderer="powerpoint" if powerpoint_test else "libreoffice")
                 (p/"decksmith.yaml").write_text(json.dumps(config))
                 command=[sys.executable,str(SCRIPTS/"create_deck.py"),"--scene",str(p/"scene.yaml"),
                          "--structure",str(p/"structure.yaml")]

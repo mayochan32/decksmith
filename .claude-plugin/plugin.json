@@ -1,6 +1,6 @@
 {
   "name": "decksmith",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Interpret arbitrary style YAML and create editable PowerPoint presentations.",
   "author": {
     "name": "mayo"

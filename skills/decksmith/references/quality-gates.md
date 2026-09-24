@@ -9,7 +9,10 @@
 - PPTXパッケージのXMLと内部参照、ページ寸法、要素数、ネイティブ文字・図形・パスの保持。フォントの実在と置換は別途確認する。
 
 ## 視覚検証
-生成後のreview-manifest.jsonはpending_visual_reviewで始まる。AIは全PNGを個別に見て、元YAML、必要なら参考資料と照合する。元PPTXをPowerPointで開いたと主張するのは実際に開いた場合だけ。
+
+output.renderer=noneの場合は視覚検証を省き、not_visually_reviewedを保持する。構造検査は行い、「PPTX生成済み・見た目未確認」として利用者に確認を依頼する。利用者が明示指定した場合に限り、この状態で納品できる。画像のない記録フォルダーをプレビューと称さない。
+
+プレビューを生成した場合のreview-manifest.jsonはpending_visual_reviewで始まる。AIは全PNGを個別に見て、元YAML、必要なら参考資料と照合する。元PPTXをPowerPointで開いたと主張するのは実際に開いた場合だけ。
 
 1. 全内容・数値・ラベル・出典を確認する。
 2. 大小差、文字組み、色、線、質感、整列、画像の処理を各要件と比較する。

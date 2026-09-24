@@ -40,3 +40,17 @@ python3 scripts/package_plugin.py --host claude --output dist/claude
 ```
 
 hostはcodex、claude、gemini。既存の配布フォルダーは上書きしない。版番号の不一致はエラーにし、配布ルートにVERSIONを同梱する。開発サンプル・旧エンジン・node_modulesは配布対象外。依存はロックファイルから導入する。
+
+## Windows PowerPointの受入確認
+
+Macでの単体テストはWindowsのCOM動作を検証しない。Windowsの対話ログイン環境でPowerPointの初期設定を済ませ、資料を保存してアプリを閉じ、PowerShellから次を実行する（このテストはPowerPointを起動する）。
+
+```powershell
+$env:DECKSMITH_RENDER_TEST = "1"
+$env:DECKSMITH_POWERPOINT_TEST = "1"
+python -m unittest discover -s tests -p test_render_contract.py
+```
+
+PNGの寸法・枚数、PDF生成、出力保護を検査する。さらに実資料で日本語・空白入りパス、指定フォント、複数ページの外観を確認する。起動中の既存資料がある場合の拒否と資料保持、実行ポリシーによる拒否、タイムアウト時に既存資料を終了しないことも確認する。PowerPointが残る場合は利用者が確認・終了し、テストで全プロセスを強制終了しない。
+
+使用する公式API：[Presentations.Open](https://learn.microsoft.com/en-us/office/vba/api/powerpoint.presentations.open)、[Slide.Export](https://learn.microsoft.com/en-us/office/vba/api/powerpoint.slide.export)、[ExportAsFixedFormat](https://learn.microsoft.com/en-us/office/vba/api/powerpoint.presentation.exportasfixedformat)。

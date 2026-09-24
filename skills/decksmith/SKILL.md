@@ -38,8 +38,8 @@ description: 題材・構成・任意のスタイルYAMLから、AIがページ�
      --structure <project>/structure.yaml --output <project>/output/deck.pptx
    ```
 
-   --validate-onlyは入力検証だけを行う。既存出力を上書きしない。--pptx-onlyはプレビューなしの中間出力に限る。ホスト専用の操作記録はホスト側で実行する。
-9. [品質検証](references/quality-gates.md)に従い全ページを見る。台帳の各指定と照合し、修正したら別名で再生成する。描画成功だけで納品しない。レビュー結果を記録し、未解決の重要項目があれば明示する。
+   --validate-onlyは入力検証だけを行う。既存出力を上書きしない。output.rendererはlibreoffice（既定）、powerpoint（Windowsのみ）、none。--rendererでも指定でき、--pptx-onlyはnoneの別名。noneは利用者の明示指定時に「PPTX生成済み・見た目未確認」として納品可能。変換失敗を理由に無断でnoneへ切り替えない。ホスト専用の操作記録はホスト側で実行する。
+9. [品質検証](references/quality-gates.md)に従い、プレビューありなら全ページを見る。台帳の各指定と照合し、修正したら別名で再生成する。noneでは構造検査を実施し、見た目を確認したと主張しない。レビュー結果を記録し、未解決の重要項目があれば明示する。
 
 ## 設計の判断
 

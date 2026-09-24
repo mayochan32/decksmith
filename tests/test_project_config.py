@@ -53,6 +53,7 @@ class ProjectConfigTests(unittest.TestCase):
                          {"mode":"auto","amount":"more","type":"illust","color":"gray","plan":"confirm"})
 
     def test_dimensions(self):
+        self.assertEqual(self.read({})["output"]["renderer"],"libreoffice")
         for data, expected in (({"aspect_ratio":"9:16"},(1080,1920)),
                                ({"width_px":800,"height_px":600},(800,600)),
                                ({"width_px":900,"aspect_ratio":"3:2"},(900,600)),
@@ -78,7 +79,8 @@ class ProjectConfigTests(unittest.TestCase):
         self.assertTrue(result["output"]["pdf"])
 
     def test_invalid_settings_rejected(self):
-        for data in ({"privacy":{"mode":"typo"}}, {"images":{"mode":"typo"}},
+        for data in ({"output":{"renderer":"unknown"}}, {"output":{"renderer":"none","pdf":True}},
+                     {"privacy":{"mode":"typo"}}, {"images":{"mode":"typo"}},
                      {"language":""},{"language":False},{"output":{"pdf":"false"}},
                      {"output":{"filename":"../overwrite.pptx"}},
                      {"input":{"style":"https://example.com/style.yaml"}},

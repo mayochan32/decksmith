@@ -11,7 +11,7 @@ DeckSmithは独立したVS Code拡張ではありません。AIが読む制作�
 - VS Codeと、CodexまたはClaude Codeの公式拡張。拡張側でサインインを済ませます。
 - このガイドと `scripts/setup_workspace.py` を含むDeckSmithの配布フォルダー、または同じ内容のソース一式。
 - Python 3.9以上、Node.js 18以上とnpm。新規導入には、サポート中のPython／Node.js LTSを選んでください。
-- プレビュー用のLibreOfficeとPoppler（`pdftoppm`）。
+- プレビュー方式に応じたソフト。既定はLibreOfficeとPoppler（`pdftoppm`）、Windowsではデスクトップ版PowerPointも選べます。PPTXのみならいずれも不要です。
 - 使用したいフォント。フォントはPPTXに埋め込まれません。
 
 導入元：[Codex拡張の公式案内](https://learn.chatgpt.com/docs/codex/ide)、[Claude Code拡張の公式案内](https://code.claude.com/docs/en/vs-code)、[Python](https://www.python.org/downloads/)、[Node.js](https://nodejs.org/en/download)、[LibreOffice](https://www.libreoffice.org/download/)、[Poppler](https://poppler.freedesktop.org/)。
@@ -77,7 +77,9 @@ python3 .claude/skills/decksmith/scripts/doctor.py
 
 両方登録した場合は両方の場所で実行します。npmは初回にネットワークを使います。PythonのYAMLライブラリは同梱しているため、`pip install` は不要です。
 
-環境確認で `python`、`node`、`engine`、`soffice`、`pdftoppm` の `ready` がtrueになれば、描画とプレビューに必要な構成が見つかっています。`fonts` と `image_generation` は別途確認が必要です。
+環境確認の `renderer.ready` がtrueなら、選択方式の必要構成が見つかっています。既定方式ではpython・node・engine・soffice・pdftoppm、PowerPoint方式ではpython・node・engine・PowerPointのCOM登録、PPTXのみではpython・node・engineを確認します。PowerPointのCOM登録は書き出し成功の保証ではありません。`fonts` と `image_generation` は別途確認が必要です。
+
+設定ファイルが別フォルダーにある場合は `doctor.py --config relativity/decksmith.yaml` のように渡します。引数なしは現在のフォルダーのdecksmith.yamlを読み、なければ既定方式を検査します。設定前なら `doctor.py --renderer powerpoint` または `doctor.py --renderer none` で方式を指定できます。
 
 不足がある場合は、その結果を拡張のチャットに貼り、次のように依頼できます。
 
@@ -181,6 +183,7 @@ language: 日本語
 | input.style | スタイルYAML。省略時は依頼・添付から判断 |
 | input.brief | 原稿・指示ファイル。省略時は依頼・添付から判断 |
 | output.pdf | PDFも保存するか。既定false |
+| output.renderer | libreoffice（既定）／powerpoint（Windowsのみ）／none（PPTXのみ） |
 | images.mode | auto（既定）／provided_only |
 | images.amount | normal（既定）／more／less／none：普通・多め・少なめ・画像なし |
 | images.type | auto（既定）／illust／photo／icon／anime：おまかせ・イラスト・写実的・アイコン・アニメ |
@@ -197,6 +200,40 @@ language: 日本語
 プロンプトでも指定できます。明確な変更指示は優先しますが、曖昧な矛盾は確認し、通信制限を黙って解除しません。AIは元の設定を残し、変更を `decksmith.resolved.yaml` に記録して使用します。出力先のプレビュー内にも適用設定を記録します。
 
 生成処理はsceneと同じフォルダーのdecksmith.yamlを自動検出します。別ファイルは `--config` で指定します。設定確認だけなら `python3 <skill-directory>/scripts/project_config.py --config <project>/decksmith.yaml` を使えます。
+
+### プレビュー・PDFの作成方式
+
+LibreOfficeとPopplerをインストールできない場合も、次の方式を選べます。PPTX本体はどの方式でも同じエンジンで生成します。
+
+| output.renderer | OS | 必要な変換ソフト | プレビュー／PDF |
+| --- | --- | --- | --- |
+| libreoffice（既定） | Windows／Mac | LibreOffice＋Poppler | プレビューあり、PDF任意 |
+| powerpoint | Windowsのみ | デスクトップ版PowerPoint＋Windows PowerShell | プレビューあり、PDF任意 |
+| none | Windows／Mac | 不要 | どちらもなし |
+
+WindowsのPowerPointを使う例：
+
+```yaml
+output:
+  renderer: powerpoint
+  pdf: true
+```
+
+「PowerPointでプレビューを作って。LibreOfficeとPopplerは使わないで」と依頼しても指定できます。Windows側のPythonとWindows PowerShellで実行してください。Mac、WSL、リモート実行・サービスからのPowerPoint操作は対象外です。PowerPointを一度手動起動して初期設定・認証を済ませ、作業中のファイルを保存してPowerPointを終了してから生成します。処理中はPowerPointを操作しないでください。
+
+PowerPointが起動中なら、利用者の資料を守るため停止して案内します。処理では生成した資料だけを開いて閉じ、アプリ全体の強制終了はしません。処理後やタイムアウト後にPowerPointが残る場合は手動で確認・終了してください。社内ポリシーなどで自動操作やスクリプト実行が禁止されている場合、制限を自動で解除・迂回しません。Windows実機での書き出し検証は未完了です。
+
+PPTXだけ生成する例（Windows／Mac共通）：
+
+```yaml
+output:
+  renderer: none
+  pdf: false
+```
+
+この方式はPowerPoint・LibreOffice・Poppler不要ですが、Python・Node.jsと描画ライブラリは必要です。「今回はPPTXだけ生成して。プレビューは不要」と依頼できます。構造検査は実行し、**PPTX生成済み・見た目未確認**として納品します。利用者がPowerPoint等で確認してください。noneとpdf=trueの組み合わせはエラーです。
+
+内部コマンドでは `--renderer` が設定より優先され、既存の `--pptx-only` は `--renderer none` と同じ意味です。変換失敗時に別方式へ自動で切り替えることはありません。
 
 ### スライドのサイズ
 
@@ -308,7 +345,7 @@ Codexデスクトップで使えた画像生成が、VS CodeのCodex拡張でも
 
 ## 6. 完成ファイルを確認して修正する
 
-標準出力はPPTXと `同名.preview/` 内のページ画像です。`output.pdf: true` を指定すると、PPTXと同じ場所へ同名のPDFも保存します。falseでも品質確認用のプレビューは作成します。
+標準出力はPPTXと `同名.preview/` 内のページ画像です。`output.pdf: true` を指定すると、PPTXと同じ場所へ同名のPDFも保存します。none以外ならfalseでもプレビューを作成します。noneでは画像・PDFは作らず、同名.preview/には検証・レビュー記録だけを保存し、状態をnot_visually_reviewedとします。
 
 PPTXをPowerPointなどで開き、特に改行、フォント、図解、数値を確認します。プレビューと実際のアプリでは表示差があり得ます。AIのプレビュー確認ができなかった場合は、未確認として扱ってください。
 
@@ -337,7 +374,7 @@ PPTXをPowerPointなどで開き、特に改行、フォント、図解、数値
 | 見た目が単調／指定と違う | 背景色だけでなく構図・文字の大小・素材・余白をYAMLと照合するよう頼む。参考画像も添付する。 |
 | ソフトは入っているのに拡張から見えない | VS Codeを再起動して環境変数を読み直す。リモート／WSLの場合は実行側を確認する。 |
 
-`--pptx-only` はプレビューを省く中間出力用です。指定しても視覚確認済みにはなりません。現在はネイティブ表・グラフ専用要素、文字輪郭の液状ワープ、複雑なマスクなどが未対応です。
+`--pptx-only` はプレビューを省く正式な出力方法です。指定しても視覚確認済みにはなりません。現在はネイティブ表・グラフ専用要素、文字輪郭の液状ワープ、複雑なマスクなどが未対応です。
 
 ## 8. 更新と配布
 

@@ -23,7 +23,7 @@ def resolve_config(path=None, base=None):
     base = path.parent
     keys(data, "slide privacy output input images language", "config")
     fields = {"slide":"width_px height_px aspect_ratio", "privacy":"mode",
-              "output":"directory filename pdf", "input":"style brief", "images":"mode amount type color plan"}
+              "output":"directory filename pdf renderer", "input":"style brief", "images":"mode amount type color plan"}
     for name, allowed in fields.items():
         keys(data.get(name, {}), allowed, name)
     slide = data.get("slide", {})
@@ -69,9 +69,14 @@ def resolve_config(path=None, base=None):
     if privacy not in ("normal", "restricted"):
         raise SpecError("privacy.mode must be normal or restricted")
     output = data.get("output", {})
+    renderer = output.get("renderer", "libreoffice")
+    if renderer not in ("libreoffice", "powerpoint", "none"):
+        raise SpecError("output.renderer must be libreoffice, powerpoint or none")
     pdf = output.get("pdf", False)
     if type(pdf) is not bool:
         raise SpecError("output.pdf must be true or false")
+    if renderer == "none" and pdf:
+        raise SpecError("output.pdf cannot be true with output.renderer=none")
     filename = output.get("filename")
     if "filename" in output:
         filename = nonempty(filename, "output.filename")
@@ -92,7 +97,7 @@ def resolve_config(path=None, base=None):
             "canvas":{"width":w,"height":h}, "size_explicit":bool(slide),
             "privacy":{"mode":privacy}, "images":images, "language":language,
             "input":inputs, "output":{"directory":local_path(output.get("directory", "output"), "output.directory"),
-                                        "filename":filename, "pdf":pdf}}
+                                        "filename":filename, "pdf":pdf, "renderer":renderer}}
 
 
 if __name__ == "__main__":
