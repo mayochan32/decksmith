@@ -19,6 +19,8 @@ description: 題材・構成・任意のスタイルYAMLから、AIがページ�
 
 ## 制作
 
+構成を決める前に[制作設定の文字量](references/project-settings.md)を適用する。text.amountはminimal/less/normal（既定）/more/denseの5段階。brief.mdのページ別指定を全体設定より優先し、表示文と話者ノートを分けてから設計する。画面掲載必須の内容をノートへ逃がしたり、描画時に切り捨てたりしない。
+
 素材制作前に[制作設定の画像方針・生成前計画](references/project-settings.md)を適用する。brief.mdのページ別画像指定を全体方針より優先し、privacyとprovided_onlyは維持する。images.plan=confirmでは計画を提示し承認を待って停止する。showは提示後に続行、skipは提示のみ省く。amount/type/colorを画像の設計・生成・最終レビューに反映する。
 
 サイズ指定がなければ横長16:9・1920×1080pxで制作する。YAMLやプロンプトにサイズ・縦横比・向きの指定があれば既定値より優先し、設計前に解釈してscene.canvasへ明記する。寸法の補完と矛盾の扱いは[シーン仕様](references/deck-spec.md)の「スライドサイズ」に従う。確定した寸法を利用者へ伝え、そのキャンバスに合わせて素材・文字・図形を設計する。

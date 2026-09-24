@@ -1,6 +1,6 @@
 {
   "name": "decksmith",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "題材・構成・スタイルを個別に指定し、編集可能なPowerPointを生成します。",
   "author": {
     "name": "mayo"

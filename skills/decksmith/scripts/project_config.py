@@ -21,9 +21,9 @@ def resolve_config(path=None, base=None):
     if path.exists() and not path.is_file():
         raise SpecError("Config must be a file: " + str(path))
     base = path.parent
-    keys(data, "slide privacy output input images language", "config")
+    keys(data, "slide privacy output input images text language", "config")
     fields = {"slide":"width_px height_px aspect_ratio", "privacy":"mode",
-              "output":"directory filename pdf renderer", "input":"style brief", "images":"mode amount type color plan"}
+              "output":"directory filename pdf renderer", "input":"style brief", "images":"mode amount type color plan", "text":"amount"}
     for name, allowed in fields.items():
         keys(data.get(name, {}), allowed, name)
     slide = data.get("slide", {})
@@ -53,6 +53,9 @@ def resolve_config(path=None, base=None):
     elif h is None:
         h = max(1, round(w / ratio))
     privacy = data.get("privacy", {}).get("mode", "normal")
+    text_amount = data.get("text", {}).get("amount", "normal")
+    if text_amount not in ("minimal", "less", "normal", "more", "dense"):
+        raise SpecError("text.amount must be one of: minimal, less, normal, more, dense")
     image_options = {
         "mode": ("auto", "provided_only"),
         "amount": ("normal", "more", "less", "none"),
@@ -95,7 +98,7 @@ def resolve_config(path=None, base=None):
     language = nonempty(data["language"], "language") if "language" in data else None
     return {"config_path":str(path) if path.is_file() else None,
             "canvas":{"width":w,"height":h}, "size_explicit":bool(slide),
-            "privacy":{"mode":privacy}, "images":images, "language":language,
+            "privacy":{"mode":privacy}, "images":images, "text":{"amount":text_amount}, "language":language,
             "input":inputs, "output":{"directory":local_path(output.get("directory", "output"), "output.directory"),
                                         "filename":filename, "pdf":pdf, "renderer":renderer}}
 

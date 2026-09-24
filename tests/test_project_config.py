@@ -28,6 +28,7 @@ class ProjectConfigTests(unittest.TestCase):
         self.assertEqual(config["images"], {"mode":"auto","amount":"normal","type":"auto","color":"color","plan":"show"})
 
     def test_image_options(self):
+        self.assertEqual(self.read({})["text"], {"amount":"normal"})
         options={"amount":("normal","more","less","none"),
                  "type":("auto","illust","photo","icon","anime"),
                  "color":("color","gray","monotone"),"plan":("show","confirm","skip")}
@@ -53,6 +54,7 @@ class ProjectConfigTests(unittest.TestCase):
                          {"mode":"auto","amount":"more","type":"illust","color":"gray","plan":"confirm"})
 
     def test_dimensions(self):
+        self.assertEqual(self.read({"text":{}})["text"]["amount"],"normal")
         self.assertEqual(self.read({})["output"]["renderer"],"libreoffice")
         for data, expected in (({"aspect_ratio":"9:16"},(1080,1920)),
                                ({"width_px":800,"height_px":600},(800,600)),
@@ -65,6 +67,26 @@ class ProjectConfigTests(unittest.TestCase):
     def test_language_names_preserved(self):
         for language in ("ja","日本語","english","英語","繁體中文","ブラジルのポルトガル語"):
             self.assertEqual(self.read({"language":language})["language"],language)
+
+    def test_text_levels_and_independent_images(self):
+        for amount in ("minimal","less","normal","more","dense"):
+            with self.subTest(amount=amount):
+                result=self.read({"text":{"amount":amount},"images":{"amount":"more"},"privacy":{"mode":"restricted"}})
+                self.assertEqual(result["text"]["amount"],amount)
+                self.assertEqual(result["images"]["amount"],"more")
+                self.assertEqual(result["privacy"]["mode"],"restricted")
+
+    def test_invalid_text_settings(self):
+        for setting in (None,[],"dense",{"amount":None},{"amount":False},{"amount":5},
+                        {"amount":[]},{"amount":{}},{"amount":"多め"},{"amount":"maximum"},{"amout":"dense"}):
+            with self.subTest(setting=setting),self.assertRaises(SpecError):
+                self.read({"text":setting})
+
+    def test_text_real_yaml(self):
+        self.path.write_text("text:\n  amount: minimal\nlanguage: 日本語\n",encoding="utf-8")
+        result=resolve_config(self.path)
+        self.assertEqual(result["text"],{"amount":"minimal"})
+        self.assertEqual(result["language"],"日本語")
 
     def test_all_fields_and_relative_paths(self):
         (self.base/"style.yaml").write_text("{}")

@@ -22,7 +22,7 @@ class RenderContractTests(unittest.TestCase):
             p=Path(raw)
             (p/"pixel.png").write_bytes(base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII="))
             (p/"style.yaml").write_text("配色: '#C8102E'\n",encoding="utf-8")
-            (p/"structure.yaml").write_text(json.dumps({"slides":[{"id":"s","required_text":["Editable text"]}]}))
+            (p/"structure.yaml").write_text(json.dumps({"slides":[{"id":"s","required_text":["Editable text"],"notes":"Detailed explanation kept in speaker notes."}]}))
             scene={"schema_version":"1.0","canvas":{"width":1280,"height":720},
                 "style_sha256":source_hash(p/"style.yaml"),"structure_sha256":source_hash(p/"structure.yaml"),
                 "requirements":[{"source":"/配色","interpretation":"Red text","status":"implemented","targets":["s/title"]}],
@@ -36,7 +36,7 @@ class RenderContractTests(unittest.TestCase):
             (p/"scene.yaml").write_text(json.dumps(scene))
             (p/"decksmith.yaml").write_text(json.dumps({"slide":{"width_px":1280,"height_px":720},
                 "input":{"style":"style.yaml"},"output":{"directory":"output","filename":"smoke.pptx","renderer":"none"},
-                "language":"english","privacy":{"mode":"restricted"},"images":{"mode":"provided_only","amount":"less","type":"icon","color":"monotone","plan":"skip"}}))
+                "language":"english","text":{"amount":"minimal"},"privacy":{"mode":"restricted"},"images":{"mode":"provided_only","amount":"less","type":"icon","color":"monotone","plan":"skip"}}))
             output=p/"output"/"smoke.pptx"
             result=subprocess.run([sys.executable,str(SCRIPTS/"create_deck.py"),"--scene",str(p/"scene.yaml"),
                 "--structure",str(p/"structure.yaml")],capture_output=True,text=True,
@@ -51,10 +51,12 @@ class RenderContractTests(unittest.TestCase):
             self.assertIsNone(json.loads(result.stdout)["preview"])
             self.assertFalse(list(output.with_suffix(".preview").glob("*.png")))
             self.assertEqual(manifest["project_settings"]["language"],"english")
+            self.assertEqual(manifest["project_settings"]["text"],{"amount":"minimal"})
             self.assertEqual(manifest["project_settings"]["privacy"]["mode"],"restricted")
             self.assertEqual(manifest["project_settings"]["images"],
                 {"mode":"provided_only","amount":"less","type":"icon","color":"monotone","plan":"skip"})
             with ZipFile(output) as archive:
+                self.assertIn(b"Detailed explanation kept in speaker notes.",archive.read("ppt/notesSlides/notesSlide1.xml"))
                 xml=archive.read("ppt/slides/slide1.xml")
                 root=ET.fromstring(xml)
                 ns={"p":"http://schemas.openxmlformats.org/presentationml/2006/main","a":"http://schemas.openxmlformats.org/drawingml/2006/main"}
