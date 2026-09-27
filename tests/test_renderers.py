@@ -9,9 +9,23 @@ from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).parents[1]/"skills/decksmith/scripts"))
 from create_deck import renderer_runtime, powerpoint_preview, SpecError
 from doctor import inspect
+from runtime_probe import test_export as export_probe
 
 
 class RendererTests(unittest.TestCase):
+    def test_probe_distinguishes_pdf_failure_after_png_success(self):
+        def fail_pdf(pptx, directory, scene, **kwargs):
+            preview=directory/'preview';preview.mkdir()
+            (preview/'slide-01.png').write_bytes(b'\x89PNG\r\n\x1a\n'+b'\0'*8+(1280).to_bytes(4,'big')+(720).to_bytes(4,'big'))
+            raise SpecError('PDF_EXPORT_FAILED: fixture')
+        with patch('runtime_probe.renderer_runtime',return_value={'powershell':'fixture'}), \
+                patch('runtime_probe.executable',return_value='node'), \
+                patch('runtime_probe.run'), patch('runtime_probe.powerpoint_preview',side_effect=fail_pdf):
+            result=export_probe()
+        self.assertTrue(result['png']['ready'])
+        self.assertFalse(result['pdf']['ready'])
+        self.assertIn('PDF_EXPORT_FAILED',result['error'])
+
     def test_none_requires_no_converter(self):
         with patch("create_deck.executable",side_effect=AssertionError("unexpected lookup")):
             self.assertEqual(renderer_runtime("none"),{})

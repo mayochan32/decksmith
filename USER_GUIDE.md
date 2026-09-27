@@ -1,153 +1,169 @@
 # DeckSmith 利用ガイド
 
-VS Codeの **Codex拡張** または **Claude Code拡張** から、題材とスタイルYAMLを渡してPowerPointを作る手順です。GitHub Copilotや一般のClaudeチャット拡張ではなく、各社の公式拡張を対象にしています。
+`brief.md` で内容、`style.yaml` で見た目、`decksmith.yaml` で生成方法を指定し、AIエージェントへ制作を依頼します。このガイドでは作業フォルダーを `my-presentations/` とし、原稿・設定・参考資料は `setting/`、生成結果は同列の `output/` に分けます。
 
-DeckSmithは独立したVS Code拡張ではありません。AIが読む制作手順（Skill）と、PPTXを描画する共通エンジンを組み合わせて使います。スタイルプリセットの選択は不要です。
+- [1. インストール方法](#1-インストール方法)
+- [2. プレゼン資料生成方法](#2-プレゼン資料生成方法)
+- [3. 困った時](#3-困った時)
+- [4. 更新と配布](#4-更新と配布)
 
-このガイドでは、配布パッケージに含まれるSkillを作業フォルダーに登録します。マーケットプレイスへの登録やCodexデスクトップアプリへのインストールとは別の導入方法です。
+## 1. インストール方法
 
-## 1. 最初に用意するもの
+### 1.1. 配布物を選ぶ
 
-- VS Codeと、CodexまたはClaude Codeの公式拡張。拡張側でサインインを済ませます。
-- このガイドと `scripts/setup_workspace.py` を含むDeckSmithの配布フォルダー、または同じ内容のソース一式。
-- Python 3.9以上、Node.js 18以上とnpm。新規導入には、サポート中のPython／Node.js LTSを選んでください。
-- プレビュー方式に応じたソフト。既定はLibreOfficeとPoppler（`pdftoppm`）、Windowsではデスクトップ版PowerPointも選べます。PPTXのみならいずれも不要です。
-- 使用したいフォント。フォントはPPTXに埋め込まれません。
+[GitHub Releases](https://github.com/mayochan32/decksmith/releases)から、利用する版の配布物を入手して展開します。各リリースに実際に添付されているファイルを確認してください。ソースZIPにはPORTABLE用ランタイムは含まれません。
 
-導入元：[Codex拡張の公式案内](https://learn.chatgpt.com/docs/codex/ide)、[Claude Code拡張の公式案内](https://code.claude.com/docs/en/vs-code)、[Python](https://www.python.org/downloads/)、[Node.js](https://nodejs.org/en/download)、[LibreOffice](https://www.libreoffice.org/download/)、[Poppler](https://poppler.freedesktop.org/)。
+| 方式 | 対象 | 準備 |
+| --- | --- | --- |
+| Windows PORTABLE版（正式な配布方式） | Windows x64 | ZIPを丸ごと展開。Python・Node.js・npmの個別導入は不要 |
+| 通常版 | Windows／Mac | Python 3.9+、Node.js 18+、npmと描画ライブラリを用意 |
 
-DeckSmith自体に各社のAPIキーを入力する必要はありません。AIの利用契約・認証は拡張側で行います。外部画像生成サービスを使う場合は、別途そのサービスの認証や料金が発生することがあります。
+どちらもAIエージェントと利用契約・認証、必要なフォントを別途用意します。ここではVS CodeのCodex／Claude Code拡張から使う手順を示します。DeckSmith自体はVS Code拡張ではなく、AIが読むSkillとローカルの描画処理です。
 
-> この版はローカルの生成・配布物の移動試験済みです。ただし、VS Code両拡張内での一連の操作、およびWindows／Linuxでの実機試験は未完了です。公式のSkill配置仕様に基づく導入手順であり、すべての環境での動作確認済みという意味ではありません。未公開の開発版を使う場合、GitHubの既存ZIPにこの版が入っているとは限りません。
+### 1.2. Windows PORTABLE版を導入する
 
-## 2. 作業フォルダーにDeckSmithを登録する
+1. Windows x64用PORTABLE ZIPを、例えば `C:\Tools\decksmith-portable` に展開します。フォルダー構成を保ち、全ファイルを展開してください。
+2. VS Codeと利用するAI拡張の準備・サインインを済ませます。
+3. 作業フォルダー `C:\work\my-presentations` と、その中に `setting` フォルダーを作り、VS Codeでは `my-presentations` を開きます。
+4. プレビュー・PDFが必要ならWindowsデスクトップ版PowerPointを導入・認証します。LibreOffice・Popplerは不要です。
 
-### フォルダーを開く
+PowerShellで確認します。パスは実際の展開先に置き換えてください。
 
-資料を保存するフォルダーを作り、VS Codeの「フォルダーを開く」で開いてください。例：`my-presentations`。
-
-WSL・SSH・Dev Containerを使う場合、フォルダーとPython／Node／LibreOffice／Popplerは、**AIがコマンドを実行する側の環境**に用意します。Windows側にだけ入れたソフトがWSLで使えるとは限りません。
-
-### 登録する
-
-VS Codeのターミナルで、展開したDeckSmithフォルダーへ移動します。以下の `/path/to/my-presentations` は、実際の作業フォルダーの絶対パスに置き換えてください。
-
-Codex用：
-
-```bash
-python3 scripts/setup_workspace.py --host codex --workspace "/path/to/my-presentations"
+```powershell
+& 'C:\Tools\decksmith-portable\decksmith.cmd' --version
+& 'C:\Tools\decksmith-portable\decksmith.cmd' doctor --project 'C:\work\my-presentations\setting' --renderer powerpoint
 ```
 
-Claude Code用：
+PowerPointを使わずPPTXのみ作る場合は、最後を `--renderer none` にします。PythonやNode.js、npmをPCへ追加インストールする必要はありません。
+
+PORTABLE版ではSkillだけを `.agents` や `.claude` へコピーせず、展開先のSkillと `decksmith.cmd` をAIに直接指定します。実行環境との位置関係を保つためです。詳細は[PORTABLE_GUIDE](PORTABLE_GUIDE.md)を参照してください。
+
+### 1.3. 通常版を導入する
+
+PORTABLE版を使う方は、この項目を飛ばしてください。
+
+Python 3.9以上、Node.js 18以上とnpmを用意します。プレビュー方式に応じてLibreOffice＋Poppler、またはWindowsのデスクトップ版PowerPointも必要です。PPTXだけなら変換ソフトは不要です。YAMLライブラリは同梱されているため `pip install` は不要です。
+
+導入元：[Python](https://www.python.org/downloads/)、[Node.js](https://nodejs.org/en/download)、[LibreOffice](https://www.libreoffice.org/download/)、[Poppler](https://poppler.freedesktop.org/)。
+
+展開した通常版のDeckSmithフォルダーで、Skillを作業フォルダーへ登録します。
 
 ```bash
+# Codex用
+python3 scripts/setup_workspace.py --host codex --workspace "/path/to/my-presentations"
+
+# Claude Code用
 python3 scripts/setup_workspace.py --host claude --workspace "/path/to/my-presentations"
 ```
 
-両方使う場合は `--host both` を指定します。Windowsで `python3` がない場合は、インストールしたPython 3.9以上の `python` または `py -3` に読み替えてください。Windowsのパス例は `"C:\Users\your-name\Documents\my-presentations"` です。
+両方使う場合は `--host both`。Windowsでpython3がない場合は、インストール済みの `python` または `py -3` を使います。パス例は `C:\work\my-presentations` です。
 
-この補助スクリプトは、次の場所へSkill一式をコピーします。設定ファイルの変更、外部通信、依存ソフトのインストールは行いません。同名のフォルダーがある場合は上書きせず停止します。事前確認だけなら `--dry-run` を追加してください。
-
-| 利用する拡張 | 作業フォルダー内の配置先 | チャットでの呼び出し |
+| 利用先 | my-presentations内の配置先 | 呼び出し |
 | --- | --- | --- |
 | Codex | `.agents/skills/decksmith/` | `$decksmith` |
 | Claude Code | `.claude/skills/decksmith/` | `/decksmith` |
 
-配置先と呼び出し方法は、[CodexのSkill仕様](https://learn.chatgpt.com/docs/build-skills)と[Claude CodeのSkill仕様](https://code.claude.com/docs/en/skills)に基づきます。Claudeのプラグイン方式で登録した場合の `/decksmith:decksmith` とは異なります。本ガイドのコピー方式では `/decksmith` です。
+登録処理は既存Skillを上書きせず、ネットワーク接続やソフトのインストールも行いません。`--dry-run` で事前確認できます。手動コピーの場合も `SKILL.md` だけでなくSkillフォルダー全体が必要です。
 
-スクリプトを使わず、配布物の `skills/decksmith` フォルダーを上記の配置先に丸ごとコピーしても構いません。`SKILL.md` だけでなく、scripts・references・package.json・package-lock.jsonなども必要です。
-
-### 依存ライブラリを用意する
-
-ターミナルで **資料の作業フォルダー** に移動して実行します。
-
-Codexの場合：
+次に、ターミナルで **my-presentationsフォルダーへ移動して** 実行します。
 
 ```bash
+# Codex用
 npm ci --prefix .agents/skills/decksmith --ignore-scripts --no-audit --no-fund
 python3 .agents/skills/decksmith/scripts/doctor.py
-```
 
-Claude Codeの場合：
-
-```bash
+# Claude Code用
 npm ci --prefix .claude/skills/decksmith --ignore-scripts --no-audit --no-fund
 python3 .claude/skills/decksmith/scripts/doctor.py
 ```
 
-両方登録した場合は両方の場所で実行します。npmは初回にネットワークを使います。PythonのYAMLライブラリは同梱しているため、`pip install` は不要です。
+利用する方だけ実行してください。両方登録した場合は両方で実行します。npmは初回にネットワークを使います。AIが実行する場合も取得の目的・利用先を示し、人間の承認を得ます。
 
-環境確認の `renderer.ready` がtrueなら、選択方式の必要構成が見つかっています。既定方式ではpython・node・engine・soffice・pdftoppm、PowerPoint方式ではpython・node・engine・PowerPointのCOM登録、PPTXのみではpython・node・engineを確認します。PowerPointのCOM登録は書き出し成功の保証ではありません。`fonts` と `image_generation` は別途確認が必要です。
+doctorは既定でLibreOffice方式を確認します。設定前に別方式を検査するなら `--renderer powerpoint` または `--renderer none` を付けます。設定を用意した後は `--config setting/decksmith.yaml` で選択方式を確認できます。
 
-設定ファイルが別フォルダーにある場合は `doctor.py --config relativity/decksmith.yaml` のように渡します。引数なしは現在のフォルダーのdecksmith.yamlを読み、なければ既定方式を検査します。設定前なら `doctor.py --renderer powerpoint` または `doctor.py --renderer none` で方式を指定できます。
+WSL・SSH・Dev Containerでは、AIが実行する側に依存ソフトが必要です。PowerPoint連携はWindowsネイティブ環境のみで、Mac・WSL・サービスからの操作には対応しません。
 
-不足がある場合は、その結果を拡張のチャットに貼り、次のように依頼できます。
+## 2. プレゼン資料生成方法
 
-```text
-DeckSmithの環境確認結果です。
-不足しているソフトと、この環境に合った導入方法を教えてください。
-既存の設定は上書きせず、追加インストールの前に内容を確認してください。
-```
-
-### macOSでLibreOfficeが見つからない場合
-
-`soffice.ready` だけがfalseでも、LibreOfficeが未インストールとは限りません。現在のDeckSmithはPATHまたは `DECKSMITH_SOFFICE` で実行ファイルを探すため、macOSのアプリフォルダーにあるLibreOfficeを自動検出できない場合があります。
-
-まず、標準のインストール先に実行ファイルがあるか確認します。
-
-```bash
-ls -l /Applications/LibreOffice.app/Contents/MacOS/soffice
-```
-
-見つかったら、資料の作業フォルダーで次を実行してください。確認コマンドは登録した拡張のものだけで構いません。
-
-```bash
-export DECKSMITH_SOFFICE="/Applications/LibreOffice.app/Contents/MacOS/soffice"
-
-# Claude Code用
-python3 .claude/skills/decksmith/scripts/doctor.py
-# Codex用
-python3 .agents/skills/decksmith/scripts/doctor.py
-```
-
-見つからない場合はLibreOfficeのインストール先を確認し、未導入なら前述の公式サイトから導入してください。別の場所にある場合は、その実行ファイルの絶対パスを指定します。
-
-**このexportは実行したターミナルと、そこから起動する子プロセスにだけ有効です。** すでに起動中の拡張や別のターミナルへ自動反映されるとは限りません。環境確認が成功しても、拡張からの生成成功を確認したことにはなりません。
-
-拡張のチャットで生成を依頼するときは、次の一文も添えてください。
+作業フォルダーの例です。PORTABLE版の実行ファイル一式は、この外に置いて構いません。
 
 ```text
-LibreOfficeの実行ファイルは /Applications/LibreOffice.app/Contents/MacOS/soffice です。
-環境確認とPowerPoint生成の各コマンドを実行するときに、
-環境変数 DECKSMITH_SOFFICE にこのパスを指定してください。
-同じ実行環境でdoctor.pyを確認してから、プレビュー付きで生成してください。
+my-presentations/
+  .agents/skills/decksmith/  ← 通常版Codex用。Claude用は .claude/skills/decksmith/
+  setting/
+    decksmith.yaml          ← 任意。サイズ、言語、通信制限、入出力などの制作設定
+    style.yaml              ← 配色、書体、構図などのデザイン指定
+    brief.md                ← 題材、対象読者、目的、残したい内容
+    references/             ← 必要なら原稿、参考PDF、画像
+  output/                   ← 生成結果（制作時に作成）
 ```
 
-`image_generation.status: host_or_user_supplied` は不足エラーではなく、画像生成に利用環境のツールまたは持ち込み素材を使うという意味です。`fonts.status: must_verify_on_target` も不足確定ではなく、使用するフォントを制作時に確認するという意味です。
+通常版のSkillは `my-presentations/` 直下に登録し、`setting/` の中には置きません。PORTABLE版では上記のSkill配置は不要です。`scene.yaml`、`structure.yaml`、制作計画やレビュー記録はAIが作る内部ファイルで、利用者が用意する必要はありません。制作中の内部ファイルは `setting/` 側、納品PPTX・PDF・プレビューは `output/` 側に保存します。
 
-### 拡張から認識を確認する
+### 2.1. プレゼン内容を用意する（brief.md）
 
-資料の作業フォルダーを開いた状態で、新しいチャットを開始します。Codexでは `$` の候補または `/skills`、Claude Codeでは `/` の候補からDeckSmithを探してください。出ない場合はVS Codeの「Developer: Reload Window」で再読み込みします。
+`setting/brief.md` に「何を、誰に、何のために伝えるか」を記載します。必須の内容・数値・条件と、参考情報を区別してください。
 
-まず「DeckSmithのSkillを読み、利用可能な生成環境を確認して」と依頼しても構いません。ファイル操作・コマンド実行・必要なネットワーク接続の承認を求められたら、対象と内容を確認してください。権限を一律に解除する必要はありません。
+```markdown
+# プレゼン制作の依頼
 
-## 3. スタイルYAMLを用意する
+題材：新サービスの紹介
+対象読者：初めてサービスを知るお客様
+目的：特長と利用の流れを理解してもらう
+ページ数：6ページ
 
-作り方は、次の記事を参照してください。
+## 必ず伝える内容
+- 解決する課題
+- サービスの特長
+- 利用開始までの流れ
+- 料金と問い合わせ先（添付資料の情報を使用）
 
-**[【AI】NotebookLMのスライド資料を自在にコントロールする — mayochan32 / Qiita](https://qiita.com/mayochan32/items/18323a3f5201d08e8afc)**
+## ページ別の指定
+- 1ページ目：文字は少なめ。イメージ画像を大きく配置
+- 3ページ目：画像なし。比較条件を省略しない
 
-参考画像から「presentation style maker」でスタイルYAMLを作る手順が紹介されています。記事はNotebookLM向けですが、作成したスタイルYAMLをDeckSmithへのデザイン指定として渡せます。NotebookLM自体の利用は必須ではありません。
+## 参考資料
+- references/service.pdf：内容の根拠
+- references/design.pdf：見た目だけの参考
+```
 
-YAMLを `style.yaml` として保存してください。Markdownの囲み記号を除き、インデントを保ちます。チャットに貼り付けて保存を依頼しても構いません。色コードは `"#FDF5E6"` のように引用符で囲むと、コメントとの混同を防げます。
+内容はプロンプトで直接伝えても構いません。`brief.md` は必須ではありませんが、再制作や更新時に便利です。提供画像の配置場所・加工禁止などもここに記載できます。
 
-DeckSmithはその都度YAMLの意味を解釈します。特定のキー名やスタイル名に合わせる必要はありません。ただし、現エンジンで表現できない効果はあります。指定の無視ではなく、制約や代案の説明を求めてください。
+ページ別の文字量・画像指定は全体設定より優先されます。ただし通信制限や「提供画像のみ」の指定を解除するものではありません。
 
-## 4. 最初のPowerPointを作る
+### 2.2. スタイルを用意する（style.yaml）
 
-### 任意の制作設定：decksmith.yaml
+**DeckSmithの最大の特徴は、任意のスタイルYAMLでPowerPointのデザイン・表現形式を指定できることです。** 配色、書体、文字の大小、構図、画像の扱い、装飾や質感などを指定します。プリセット名を選ぶ必要はありません。
 
-資料フォルダーの `decksmith.yaml` に制作条件を保存できます。ファイル・各項目とも省略可能です。デザインは引き続き `style.yaml` に記述します。
+作り方は **[こちらのQiita記事](https://qiita.com/mayochan32/items/18323a3f5201d08e8afc)** を参照してください。記事を参考に作成したYAMLをDeckSmithのスタイル指定として利用できます。NotebookLMの利用は必須ではありません。
+
+YAMLを `setting/style.yaml` に保存します。Markdownの囲み記号は除き、インデントを保ってください。色コードは `"#1A4FA0"` のように引用符で囲みます。チャットへ貼り付けて保存を依頼しても構いません。
+
+特定のキー名に合わせる必要はありません。AIが指定の意味を読み取り、資料の内容と組み合わせて設計します。同じ原稿を別のスタイルで作りたい場合は、このYAMLを差し替えて再設計を依頼します。未対応の効果は制約を説明し、勝手に無視しません。
+
+### 2.3. 生成方法を用意する（decksmith.yaml）
+
+サイズ、言語、文字量、画像方針、通信制限、出力先を指定します。デザインそのものは `style.yaml` に記述します。このファイルと各項目は省略可能です。
+
+#### 雛形から作る
+
+配布物の `templates/decksmith.yaml`、または `skills/decksmith/assets/decksmith.yaml` を `setting/decksmith.yaml` へコピーし、必要な値だけ変更します。
+
+PORTABLE版は、PowerPoint用の値を設定して雛形を作れます。
+
+```powershell
+& 'C:\Tools\decksmith-portable\decksmith.cmd' init --project 'C:\work\my-presentations\setting' --renderer powerpoint
+```
+
+PPTXのみなら `--renderer none`。通常版のCodex配置なら、my-presentations内で次を実行します（Claude Codeは `.agents` を `.claude` に読み替え）。
+
+```bash
+python3 .agents/skills/decksmith/scripts/project_init.py --project setting
+```
+
+既存設定は上書きしません。`input.style`、`input.brief`、`output.filename`、`language` の `null` は未指定という意味です。雛形を直接コピーした場合、rendererは `libreoffice` なので、PORTABLE版では必ず `powerpoint` または `none` に変更してください。
+
+#### 記入例：Windows PowerPointで確認する
 
 ```yaml
 slide:
@@ -160,8 +176,9 @@ input:
   style: style.yaml
   brief: brief.md
 output:
-  directory: output
-  filename: 相対性理論.pptx
+  directory: ../output
+  filename: presentation.pptx
+  renderer: powerpoint
   pdf: true
 images:
   mode: auto
@@ -169,18 +186,24 @@ images:
   type: auto
   color: color
   plan: show
-language: 日本語
 text:
   amount: normal
+language: 日本語
 ```
+
+相対パスは `decksmith.yaml` のあるフォルダーを基準にします。`style.yaml` と `brief.md` は同じ `setting/` 内、`../output` は一段上の `my-presentations/output/` を指します。出力先を省略した場合も `../output` です。既存設定に `directory: output` がある場合はその明示指定を優先するため、今回の構成へ切り替えるには `../output` に変更してください。既存ファイルは自動移動しません。
+
+これは記入例で、全項目の既定値とは異なります。Macのプレビューには `renderer: libreoffice`、PPTXだけなら `renderer: none` と `pdf: false` を指定します。
+
+#### 設定項目一覧
 
 | 設定項目 | 意味・省略時 |
 | --- | --- |
 | slide.width_px | 幅。サイズ無指定時1920 |
 | slide.height_px | 高さ。サイズ無指定時1080 |
 | slide.aspect_ratio | 幅:高さ。サイズ無指定時16:9 |
-| privacy.mode | normal（既定）／restricted |
-| output.directory | 出力先。既定output |
+| privacy.mode | restricted（既定）／normal。どちらもWeb・外部サービスは事前承認が必要 |
+| output.directory | 設定ファイルから見た出力先。既定 `../output`（settingと同列） |
 | output.filename | .pptx付きファイル名。省略時はAIが題材から決定 |
 | input.style | スタイルYAML。省略時は依頼・添付から判断 |
 | input.brief | 原稿・指示ファイル。省略時は依頼・添付から判断 |
@@ -194,245 +217,177 @@ text:
 | language | 資料の言語。省略時は依頼内容から判断 |
 | text.amount | minimal／less／normal（既定）／more／dense：文字・文章量の5段階 |
 
-相対パスはこの設定ファイルがあるフォルダー基準です。`language` は `ja`／`en` だけでなく、`日本語`／`english`／`繁體中文`／`イギリス英語` などでも指定できます。意味が曖昧な場合はAIが確認します。本文・見出し・キャプション・説明用ノートへ適用し、固有名詞や引用原文は必要に応じて保持します。
 
-`restricted` は利用中のAIサービスの組み込み機能（画像生成を含む）とローカル処理のみ利用します。Web検索・外部サイトへのアクセス・別サービスへの送信はしません。初回セットアップは対象外ですが、制作中の追加ダウンロードは停止して案内します。原稿・画像・プレビューは利用中のAIサービスへ送信され得ます。これはAIの操作ルールであり、OSのクラウド同期や拡張の通信まで遮断する機能ではありません。
+相対パスはdecksmith.yamlのあるフォルダー基準です。通常版・PORTABLE版とも、明確なプロンプトでの変更指定にも対応します。曖昧な矛盾は確認します。AIは適用した設定を `decksmith.resolved.yaml` に記録し、元の設定は保持します。
 
-`auto` は必要に応じて提供画像や生成画像を使います。`provided_only` は指定された画像のみを使用し、新規生成・外部取得はしません。画像認識による内容に合った配置、ローカル加工、編集可能な図形・図解の作成は可能です。配置指示があれば優先し、不足素材は相談します。
+#### サイズ・言語・文字量
 
-プロンプトでも指定できます。明確な変更指示は優先しますが、曖昧な矛盾は確認し、通信制限を黙って解除しません。AIは元の設定を残し、変更を `decksmith.resolved.yaml` に記録して使用します。出力先のプレビュー内にも適用設定を記録します。
+サイズの既定は横長16:9・1920×1080px。比率だけなら長辺1920pxを基準に計算し、比率と片方の寸法があればもう片方を求めます。両寸法と比率を指定する場合は一致させてください。pxは設計座標とプレビューの画素数で、PPTX自体は固定画像ではありません。
 
-生成処理はsceneと同じフォルダーのdecksmith.yamlを自動検出します。別ファイルは `--config` で指定します。設定確認だけなら `python3 <skill-directory>/scripts/project_config.py --config <project>/decksmith.yaml` を使えます。
+languageは `ja`／`en` に限らず、`日本語`／`english`／`イギリス英語` などでも指定できます。本文・見出し・説明用ノートへ適用します。
 
-### 1ページの文字・文章量
+文字量はminimal（とても少ない）、less（少なめ）、normal（普通）、more（多め）、dense（とても多い）の5段階。単純な文字数制限ではなく、説明の詳しさと話者ノートへの振り分けを調整します。必須の数値・条件は勝手に削除せず、小さい文字で無理に詰め込みません。
 
-`decksmith.yaml` で画像量とは独立して指定できます。
+#### 画像の設定
 
-```yaml
-text:
-  amount: normal
-```
+autoは提供画像や利用可能な生成画像を使用。provided_onlyは提供画像だけを使用し、生成・外部取得はしません。内容認識が使える場合は画像を実際に見て、スライドに合う位置を判断します。
 
-| 値 | 意味 | ページの作り方 |
-| --- | --- | --- |
-| minimal | とても少ない | 大きなキーワード・短いメッセージ中心。詳しい説明は話者ノートへ |
-| less | 少なめ | 要点と短い補足。口頭説明を前提にする |
-| normal | 普通・既定 | 要点に必要な説明を添える |
-| more | 多め | 根拠・具体例・補足まで載せる |
-| dense | とても多い | 配布して読める詳しさ。段落・見出し・段組みで整理する |
+量だけでなくページ内の面積・役割も考慮します。noneでも説明用の編集可能な図解は使えます。grayは白黒グレー、monotoneは単一色相の濃淡。色調は画像への指定で、本文や背景まで一律に変更しません。証拠画像を無断で作風変換することもありません。
 
-プロンプトでも「文字量はとても少なく。キーワード中心で、詳しい説明は話者ノートに」「文字量は多め。発表を聞かなくても理解できる資料に」と指定できます。YAMLの値は英語、プロンプトや原稿は日本語でも構いません。
+生成前にAIが画像計画を作ります。showは提示して続行、confirmは承認待ち、skipは提示だけ省略します。Web検索・外部サービスの承認と、生成不可時の確認はskipでも省略しません。
 
-`brief.md` のページ別指定が全体設定より優先されます。
+#### 通信と承認
 
-```markdown
-## 1ページ目：導入
-文字量：とても少ない
-「時間は、絶対ではない」を大きく表示。
+既定はrestricted。normalを明示した既存設定は維持しますが、**どちらのモードでもWeb検索・外部サービスの利用前に人間の承認が必要**です。目的・利用先・送信情報を説明し、restrictedでは制限の例外であることも確認します。無断でnormalへ切り替えません。
 
-## 2ページ目：実験の説明
-文字量：多め
-実験条件・結果・解釈を掲載。
-```
+利用中のAIサービスの組み込み画像生成とローカル処理は、外部サービスと区別します。原稿・画像・プレビューは利用中AIへ送信され得ます。OS同期や拡張の通信を遮断する仕組みではありません。
 
-文字数の固定上限ではなく、AIが内容の要約・説明の詳しさ・ノートへの振り分けを設計します。図解内のラベルやキャプションも対象ですが、画面掲載必須の文章・数値・重要条件は勝手に削除したりノートへ移したりしません。多めの指定でも根拠のない説明は足さず、小さな文字で無理に詰め込みません。両立できない場合はページ分割・ノート移動・文字量変更を相談します。
+#### プレビュー・PDF方式
 
-ページ別の適用方針はAIが `text-plan.md` に記録します。話者ノートはPPTXのノート欄に保存します。設定の検証や保存だけで、文字量・見た目の適合が自動保証されるわけではありません。
-
-### プレビュー・PDFの作成方式
-
-LibreOfficeとPopplerをインストールできない場合も、次の方式を選べます。PPTX本体はどの方式でも同じエンジンで生成します。
-
-| output.renderer | OS | 必要な変換ソフト | プレビュー／PDF |
+| renderer | 利用環境 | 必要な変換ソフト | 出力 |
 | --- | --- | --- | --- |
-| libreoffice（既定） | Windows／Mac | LibreOffice＋Poppler | プレビューあり、PDF任意 |
-| powerpoint | Windowsのみ | デスクトップ版PowerPoint＋Windows PowerShell | プレビューあり、PDF任意 |
-| none | Windows／Mac | 不要 | どちらもなし |
+| powerpoint | Windows通常版／PORTABLE版 | デスクトップ版PowerPoint | PPTX・PNG、任意でPDF |
+| libreoffice | Windows／Macの通常版 | LibreOffice＋Poppler | PPTX・PNG、任意でPDF |
+| none | Windows通常版／PORTABLE版、Mac通常版 | 不要 | PPTXのみ、見た目未確認 |
 
-WindowsのPowerPointを使う例：
+PORTABLE版はlibreofficeを使用しません。noneとpdf=trueの組み合わせはエラーです。失敗を理由に別方式へ自動変更しません。
 
-```yaml
-output:
-  renderer: powerpoint
-  pdf: true
-```
+PowerPoint連携では、初期設定・認証を済ませ、開いている資料を保存してPowerPointを終了してから開始します。書き出し中は操作しないでください。利用者のアプリを強制終了しないため、終了後に空のプロセスが残る場合は手動で閉じます。
 
-「PowerPointでプレビューを作って。LibreOfficeとPopplerは使わないで」と依頼しても指定できます。Windows側のPythonとWindows PowerShellで実行してください。Mac、WSL、リモート実行・サービスからのPowerPoint操作は対象外です。PowerPointを一度手動起動して初期設定・認証を済ませ、作業中のファイルを保存してPowerPointを終了してから生成します。処理中はPowerPointを操作しないでください。
+### 2.4. プレゼン資料生成を指示する
 
-PowerPointが起動中なら、利用者の資料を守るため停止して案内します。処理では生成した資料だけを開いて閉じ、アプリ全体の強制終了はしません。処理後やタイムアウト後にPowerPointが残る場合は手動で確認・終了してください。社内ポリシーなどで自動操作やスクリプト実行が禁止されている場合、制限を自動で解除・迂回しません。Windows実機での書き出し検証は未完了です。
+VS Codeで `my-presentations/` を開き、AIエージェントへ依頼します。以下の通常版の依頼例は、この作業フォルダーを基準に指定しています。設定内の相対パスは引き続き `setting/decksmith.yaml` 基準です。
 
-PPTXだけ生成する例（Windows／Mac共通）：
+#### PORTABLE版の依頼例
 
-```yaml
-output:
-  renderer: none
-  pdf: false
-```
-
-この方式はPowerPoint・LibreOffice・Poppler不要ですが、Python・Node.jsと描画ライブラリは必要です。「今回はPPTXだけ生成して。プレビューは不要」と依頼できます。構造検査は実行し、**PPTX生成済み・見た目未確認**として納品します。利用者がPowerPoint等で確認してください。noneとpdf=trueの組み合わせはエラーです。
-
-内部コマンドでは `--renderer` が設定より優先され、既存の `--pptx-only` は `--renderer none` と同じ意味です。変換失敗時に別方式へ自動で切り替えることはありません。
-
-### スライドのサイズ
-
-指定がなければ **横長16:9・1920×1080px** で作ります。YAMLまたはプロンプトにサイズ指定があれば、そちらを優先します。たとえば「縦長9:16、1080×1920pxで作って」と依頼できます。
-
-YAMLにも自由なキーで記述できます。例：
-
-```yaml
-スライドサイズ:
-  幅px: 1080
-  高さpx: 1920
-```
-
-比率だけの指定では長辺1920pxを基準に算出します。比率と片方の寸法があれば他方を算出します。指定同士が矛盾する場合は、明確な上書き指示がない限り確認します。AIが確定したサイズを伝えてから、そのサイズに合わせて各ページを設計します。
-
-pxは設計座標とプレビューPNGの画素数です。PPTX自体は固定ピクセル画像ではなく、96px＝1インチとしてスライドの物理寸法へ変換します。
-
-### 題材と資料を用意する
-
-作業フォルダーに次を用意します。
+Codex・Claude Codeいずれも、実際の展開先と作業フォルダーを指定します。
 
 ```text
-my-presentations/
-  .agents/skills/decksmith/    ← Codex用。Claude用は .claude/skills/decksmith/
-  relativity/
-    decksmith.yaml           ← 任意。サイズ、言語、通信制限、入出力などの制作設定
-    style.yaml               ← 配色、書体、構図などのデザイン指定
-    brief.md                 ← 題材、対象読者、目的、残したい内容
-    references/              ← 必要なら原稿、参考PDF、画像
+C:\Tools\decksmith-portable\skills\decksmith\SKILL.md と
+C:\Tools\decksmith-portable\PORTABLE_GUIDE.md を読んでください。
+
+C:\work\my-presentations\setting のbrief.md、style.yaml、decksmith.yamlに従って
+PowerPointを作成してください。
+実行には同梱のdecksmith.cmdを使い、PC側のPythonやNode.jsは使わないでください。
+本文・数値・正確な図解は編集可能にし、指定された方式でプレビューを確認してください。
+外部アクセスの承認が必要な場合や画像生成ができない場合は、先に確認してください。
 ```
 
-`decksmith.yaml` は必須ではありません。用意する場合は資料フォルダー（この例では `relativity/`）に置きます。`input.style: style.yaml`、`input.brief: brief.md` と指定すれば、同じフォルダーのデザイン・原稿を参照できます。詳しい項目は上の「任意の制作設定：decksmith.yaml」を参照してください。
-
-`brief.md` も必須ではありません。内容をチャットで直接伝えても大丈夫です。`scene.yaml` や `structure.yaml` はAIが作る内部ファイルなので、自分で書く必要はありません。
-
-### Codexに依頼する例
-
-**内容をプロンプトで直接伝える場合：**
+#### 通常版：brief.mdから作る
 
 ```text
 $decksmith
-relativity/style.yaml のスタイルで、
-相対性理論を初学者向けに説明するPowerPointを8枚作ってください。
-光速不変、時間の遅れ、E=mc²、一般相対論、GPSを扱ってください。
-必要なイラストは生成機能が使える場合に生成してください。
-画像生成が使えない場合、必要な素材と代案を先に教えてください。
-本文・数式・正確な図解は編集可能にしてください。
-relativity/output/ に保存し、全ページのプレビューを確認してください。
-出典はスピーカーノートに記録し、未対応の表現があれば説明してください。
+setting/brief.mdに記載した題材・対象読者・目的・必須内容に沿ってPowerPointを作ってください。
+デザインはsetting/style.yaml、生成条件はsetting/decksmith.yamlに従ってください。
+本文・数値・正確な図解は編集可能にし、全ページのプレビューを確認してください。
+不明点や矛盾は確認してください。
 ```
 
-**内容をbrief.mdで指定する場合：**
+Claude Codeでは先頭を `/decksmith` に置き換えます。PPTXのみの設定なら「全ページのプレビューを確認」を「見た目未確認として納品」に変えてください。
+
+#### 通常版：内容をプロンプトで伝える
 
 ```text
 $decksmith
-relativity/brief.md を読んで、記載された題材・対象読者・目的・必須内容に沿って
-PowerPointを作ってください。
-制作設定は relativity/decksmith.yaml、デザインは relativity/style.yaml に従ってください。
-画像の利用方法、言語、サイズ、保存先は制作設定に従ってください。
-本文・数式・正確な図解は編集可能にし、全ページのプレビューを確認してください。
-指定に矛盾や制作に必要な情報の不足があれば、確認してください。
+新サービスを初めて知るお客様向けに、6ページのPowerPointを作ってください。
+課題、特長、利用の流れ、料金、問い合わせ先を説明してください。
+料金などの事実はsetting/references/service.pdfに従い、推測で補わないでください。
+デザインはsetting/style.yaml、生成条件はsetting/decksmith.yamlに従い、
+output/へ保存してください。本文・数値は編集可能にしてください。
 ```
 
-この例は3ファイルを用意した場合です。`decksmith.yaml` がない場合は制作設定の指定を省き、必要な条件と保存先をプロンプトに書いてください。設定ファイルの `input.style` と `input.brief` にパスを書いてある場合は、次のように短く依頼できます。
+brief.mdがない場合は `input.brief` をnullまたは省略にします。decksmith.yamlも省略する場合は、必要な条件と保存先をプロンプトで指定します。PORTABLE版では必ずPowerPoint方式かPPTXのみかを明示してください。
 
-```text
-$decksmith
-relativity/decksmith.yaml の制作設定と、そこで指定した原稿・スタイルを使って
-PowerPointを作成し、全ページのプレビューを確認してください。
-```
+#### 制作中と完成後
 
-### Claude Codeに依頼する例
+AIは使用バージョン、通信方針、画像生成の利用可否を最初に案内します。画像計画・代表ページの試作・全体生成・レビューを進めます。承認が必要な場面では回答を待ちます。内部の設定・承認・内容保護・レビュー記録はAIが作成します。
 
-上のいずれの例も、先頭の `$decksmith` を `/decksmith` に置き換えて送信します。同じ題材・YAML・参考資料を渡せますが、AIや生成機能が異なれば、構図や画像は同一にはなりません。
+通常は `my-presentations/output/`（settingと同列）にPPTX、同名の `.preview/` に確認画像と記録が保存されます。pdf=trueならPDFも保存。noneではPNG・PDFはなく、記録だけ残ります。
 
-ファイルはVS Codeのファイル参照機能で指定するか、開いている作業フォルダーからの相対パスを書いてください。参考PDFは「内容の根拠」か「見た目の参考」かを添えると意図が伝わります。
-
-## 5. 画像生成について
-
-### 量・種類・色調と画像計画
-
-`decksmith.yaml` の `images` に指定します。画像の数だけでなく、ページに占める面積と内容上の役割もAIが判断します。`more` でも無意味な画像で埋めず、`none` でも説明用の編集可能な図形・図解は使えます。
-
-```yaml
-images:
-  amount: more
-  type: illust
-  color: gray
-  plan: confirm
-```
-
-プロンプトなら「画像は多め、白黒のイラスト中心に。画像計画を確認してから作って」と指定できます。YAMLの値は英語ですが、プロンプトは日本語でも構いません。
-
-**brief.mdのページ別画像指定は全体設定より優先します。** 例えば「1ページ目は写実的な画像を大きく、2ページ目は画像なし」と書けば、そのページに適用します。全体がnoneでも明示されたページだけ画像を使えます。ただし、ページ指定で通信制限やprovided_onlyが解除されることはありません。
-
-色調指定は画像に適用し、本文や背景の色まで変更しません。grayは無彩色、monotoneは赤など単一色相の濃淡です。colorは多色を強制しません。提供された製品写真や証拠画像を、許可なく別の作風へ変更しません。
-
-画像生成前に、AIがページごとの画像の有無・目的・種類・色調・素材を計画し、資料フォルダーの `image-plan.md` に記録します。`show` はチャットで要約を示してそのまま制作へ進み、`confirm` は承認を待ってから画像制作・PPTX生成を始めます。`skip` は提示のみを省きます。画像計画の承認待ちはAIの制作手順であり、生成スクリプト自体が会話の承認を判定する機能ではありません。
-
-### 画像生成機能の有無
-
-Codexデスクトップで使えた画像生成が、VS CodeのCodex拡張でも使えるとは限りません。Claude Codeについても、画像生成機能が標準で使えると仮定しません。
-
-- 利用可能な画像生成ツールがある場合：AIが呼び出し、素材を資料内の `assets/` に保存します。
-- 画像生成がない場合：自分で用意した画像や、別サービスで生成して保存したPNG／JPEGを渡せます。
-- 外部サービスを接続する場合：利用するツール、認証、料金、送信する内容を確認してください。DeckSmithに自動接続機能はありません。
-
-画像なしで成立するスタイルなら、文字やネイティブ図形で制作できます。写真・質感・複雑なイラストが主役の指定では、素材なしで同等の見た目にはなりません。機密資料を外部生成サービスへ送ってよいかも確認してください。
-
-## 6. 完成ファイルを確認して修正する
-
-標準出力はPPTXと `同名.preview/` 内のページ画像です。`output.pdf: true` を指定すると、PPTXと同じ場所へ同名のPDFも保存します。none以外ならfalseでもプレビューを作成します。noneでは画像・PDFは作らず、同名.preview/には検証・レビュー記録だけを保存し、状態をnot_visually_reviewedとします。
-
-PPTXをPowerPointなどで開き、特に改行、フォント、図解、数値を確認します。プレビューと実際のアプリでは表示差があり得ます。AIのプレビュー確認ができなかった場合は、未確認として扱ってください。
-
-修正は同じチャットで具体的に伝えます。
+完成PPTXはPowerPoint等でも開き、改行・フォント・図解・数値を確認してください。修正は同じチャットで依頼できます。
 
 ```text
 3枚目は図を大きくして、本文を短くしてください。
-1枚目は見出しを背景の曲線に沿わせてください。
-内容と数値は変えず、元のPPTXを残して別名で再生成してください。
-修正後も全ページを確認してください。
+必須の内容と数値は変えず、元のファイルを残して別名で再生成してください。
+修正後も表示を確認してください。
 ```
 
-別のスタイルを試す場合は新しいYAMLを渡し、同じ内容から再設計するよう頼みます。元の `style.yaml`、`structure.yaml`、`scene.yaml`、`assets/` を保存すると次の修正に使えます。
+## 3. 困った時
 
-## 7. 困ったとき
+### 3.1. 環境・実行の問題
 
-| 症状 | 確認すること |
+| 症状 | 対処 |
 | --- | --- |
-| DeckSmithが候補に出ない | 開いている作業フォルダー直下に正しい配置があるか。`decksmith/decksmith/SKILL.md` のように二重になっていないか。新規チャット／再読み込みを試す。組織のSkill利用制限も確認する。 |
-| `Missing node`、エンジンが見つからない | Node.jsのPATHと、コピーしたSkill内でnpm ciを実行したかを確認する。 |
-| `Missing soffice` | LibreOfficeの実行ファイルがPATHにない可能性。AIに実際の場所を調べさせ、`DECKSMITH_SOFFICE` を指定する。 |
-| `Missing pdftoppm` | Popplerの導入場所を確認し、必要なら `DECKSMITH_PDFTOPPM` を指定する。 |
-| 日本語が四角になる／改行が違う | 実行環境と閲覧環境に指定フォントがあるか。代替フォントを使ったら全ページを再確認する。 |
-| 出力の上書きを拒否される | 別の出力名を指定する。既存ファイルを自動削除しない。 |
-| YAMLエラー | 引用符、インデント、囲み記号を確認。元の意味を変えずに構文だけ直すよう依頼する。 |
-| 見た目が単調／指定と違う | 背景色だけでなく構図・文字の大小・素材・余白をYAMLと照合するよう頼む。参考画像も添付する。 |
-| ソフトは入っているのに拡張から見えない | VS Codeを再起動して環境変数を読み直す。リモート／WSLの場合は実行側を確認する。 |
+| Skillが候補に出ない | 通常版は配置先・フォルダーの二重化を確認し、新規チャットや再読み込みを試す。PORTABLE版は候補への登録を前提にせず、展開先のSKILL.mdを直接指定する |
+| PORTABLE版でbundled Pythonがない | ZIP全体を展開し直す。PC側のPythonへの切り替えでは解決しない |
+| 通常版でnode／engineが見つからない | Node.jsのPATHと、登録したSkill内のnpm ciを確認する |
+| PowerPointが使えない | Windowsデスクトップ版の導入・認証を確認。doctorのCOM登録確認だけでは書き出し成功を保証しない |
+| PowerPointが起動中と表示 | 開いている資料を保存し、PowerPointを手動で終了する |
+| スクリプト実行が拒否される | 診断結果と実行環境を確認し、組織の管理者へ相談する。制限を自動解除・迂回しない |
+| soffice／pdftoppmが見つからない | 通常版のLibreOffice方式のみ必要。導入先とPATHを確認する |
+| 日本語が四角になる・改行が違う | 実行先と閲覧先のフォントを確認。代替フォントで全ページを再確認する |
+| 上書きを拒否される | 別名で生成する。既存の出力やレビュー記録は削除しない |
+| YAMLエラー | 引用符・インデント・Markdown囲みを確認する |
+| 見た目が指定と違う | 色だけでなく構図・文字の大小・余白・素材をstyle.yamlと照合するよう依頼する |
 
-`--pptx-only` はプレビューを省く正式な出力方法です。指定しても視覚確認済みにはなりません。現在はネイティブ表・グラフ専用要素、文字輪郭の液状ワープ、複雑なマスクなどが未対応です。
+診断結果をチャットへ貼り、「不足と対処を説明し、追加インストール前に確認して」と依頼できます。PORTABLE版の詳細診断は[PORTABLE_GUIDE](PORTABLE_GUIDE.md)を参照してください。
 
-## 8. 更新と配布
+### 3.2. MacでLibreOfficeが見つからない
 
-### バージョンの確認
-
-DeckSmithのバージョンは `vメジャー.マイナー.bugfix`（例：`v0.4.0`）です。配布フォルダー直下の `VERSION`、または配置済みSkill内の `VERSION` で確認できます。実際に使用しているコピーを確認するには、資料の作業フォルダーで実行してください。
+通常版では、アプリが入っていてもPATHから見つからない場合があります。まず実在を確認します。
 
 ```bash
-# Codex用
-python3 .agents/skills/decksmith/scripts/create_deck.py --version
-# Claude Code用
-python3 .claude/skills/decksmith/scripts/create_deck.py --version
+ls -l /Applications/LibreOffice.app/Contents/MacOS/soffice
+export DECKSMITH_SOFFICE="/Applications/LibreOffice.app/Contents/MacOS/soffice"
+python3 .agents/skills/decksmith/scripts/doctor.py
 ```
 
-生成開始時にも `DeckSmith vX.Y.Z` を表示し、環境確認結果とプレビュー内の検証・レビュー記録にもバージョンを残します。PPTXの見た目にはバージョン文字を追加しません。AIも制作開始時に使用バージョンを案内します。古い配布物ではこの確認コマンドに対応していません。
+Claude Codeでは `.agents` を `.claude` に読み替えてください。別の導入先なら実際のパスを指定します。
 
-### 新版への更新
+exportはそのターミナルと子プロセスだけに有効です。起動済みの拡張へ自動反映されるとは限りません。AIにも「診断と生成の各実行でDECKSMITH_SOFFICEにこのパスを指定して」と伝えてください。
 
-登録スクリプトは同名のSkillを更新しません。更新前に既存の `decksmith` フォルダーを、Skill探索対象の外へバックアップしてから新版を配置し、npm ciを実行してください。古いSkillを同じ `skills/` 内に別名で残すと重複認識の原因になります。資料の `output/` や `assets/` は削除しません。
+### 3.3. 画像生成できない
 
-別のPCに配布する場合、開発チャットの履歴や開発者の絶対パスは不要です。配布フォルダーのこのガイドと登録スクリプトを使い、配布先で依存ソフト・フォント・画像生成手段を確認してください。セットアップや修正を加えたコピーは、配布元の更新で自動同期されません。
+画像生成機能の有無は利用するAI環境によって異なります。機能なし・利用上限・生成失敗で必要画像を用意できない場合、AIは理由と対象ページを示し、次の選択を確認します。
 
-公式仕様の確認日：2026-09-23。各拡張の操作や利用条件は変更されることがあります。
+1. **画像なしで作成**：文字・図解・余白を再配置する。
+2. **四角と生成プロンプトを表示**：予定画像位置に四角を置き、その中に画像生成指示を編集可能な文字で記載する。
+
+回答前に無断で画像省略・図解置換・別サービス接続はしません。一部だけ生成できた場合は失敗分について確認します。2は「画像差し替え待ち」として納品し、画像まで完成した資料とは扱いません。
+
+### 3.4. 対応していない表現
+
+専用のネイティブ表・グラフ要素、複雑なマスク、文字輪郭の液状ワープなどは未対応です。要求を無視せず、制約を説明して対応を相談します。noneで生成した資料は構造検査のみで、視覚確認済みにはなりません。
+
+## 4. 更新と配布
+
+### 4.1. バージョンを確認する
+
+形式は `vx.y.z`（メジャー・マイナー・bugfix）。配布フォルダー直下またはSkill内のVERSIONで確認できます。
+
+```powershell
+# PORTABLE版
+& 'C:\Tools\decksmith-portable\decksmith.cmd' --version
+```
+
+```bash
+# 通常版（my-presentations内で実行）
+python3 .agents/skills/decksmith/scripts/create_deck.py --version
+# Claude Code用は .agents を .claude に変更
+```
+
+生成開始時と検証・レビュー記録にも版番号が残ります。スライド上には版番号を追加しません。
+
+### 4.2. 新版へ更新する
+
+PORTABLE版は新版ZIPを別フォルダーへ丸ごと展開し、AIへ指定するSKILL.md・ガイド・decksmith.cmdのパスを切り替えます。runtimeやSkillの一部だけを旧版と混在させないでください。`setting/` の原稿・設定・素材と、同列の `output/` の生成結果は保持します。
+
+通常版は既存Skillを探索対象の外へバックアップし、新版を配置してnpm ciを実行します。登録処理は同名のSkillを上書きしません。旧Skillを同じskillsフォルダーに別名で残すと、重複認識の原因になります。
+
+### 4.3. 別のPCへ配布する
+
+PORTABLE版は展開フォルダー全体を渡します。通常版は配布物のガイドと登録処理を使い、配布先で依存ソフトを用意します。どちらも開発チャットや開発者の絶対パスには依存しません。AI環境・フォント・PowerPoint等の利用条件は各PCで確認してください。
+
+正式仕様としてのPORTABLE版採用と、更新版ZIPの公開は別です。この文書は現在のソースを説明しています。公開済みZIPに含まれる機能は、そのリリースの説明とVERSIONを確認してください。
+
+AI向けの詳しい制作補助は[workflow.md](skills/decksmith/references/workflow.md)を参照してください。

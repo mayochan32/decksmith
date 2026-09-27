@@ -26,6 +26,7 @@ const paint = value => {
 };
 const style = e => ({
   fontFace:e.font,fontSize:e.size*0.75,...paint(e.color),bold:e.bold??false,italic:e.italic??false,
+  ...(e.tracking !== undefined ? {charSpacing:e.tracking*0.75} : {}),
 });
 for (const data of spec.slides) {
   const slide=deck.addSlide();

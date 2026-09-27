@@ -22,9 +22,10 @@ class ProjectConfigTests(unittest.TestCase):
     def test_defaults_without_file(self):
         config=resolve_config(base=self.base)
         self.assertEqual(config["canvas"], {"width":1920,"height":1080})
-        self.assertEqual(config["privacy"]["mode"], "normal")
+        self.assertEqual(config["privacy"]["mode"], "restricted")
         self.assertEqual(config["images"]["mode"], "auto")
         self.assertFalse(config["output"]["pdf"])
+        self.assertEqual(config["output"]["directory"], str(self.base.parent / "output"))
         self.assertEqual(config["images"], {"mode":"auto","amount":"normal","type":"auto","color":"color","plan":"show"})
 
     def test_image_options(self):

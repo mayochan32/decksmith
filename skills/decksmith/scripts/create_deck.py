@@ -12,6 +12,18 @@ from compile_spec import SpecError, compile_scene, source_hash
 from validate_pptx import validate_pptx
 from project_config import resolve_config
 from version import read_version
+from design_quality import check_plan, inspect_design
+from workflow import announce, check_content, policy_record
+
+
+def next_output_path(output):
+    """Choose a free sibling name; final exclusive creation still prevents races."""
+    for index in range(1, 10000):
+        candidate = output if index == 1 else output.with_name(output.stem + f'-{index:03d}' + output.suffix)
+        paths = (candidate, candidate.with_suffix('.preview'), candidate.with_suffix('.pdf'))
+        if not any(p.exists() or p.is_symlink() for p in paths):
+            return candidate
+    raise SpecError('No free output name; choose another base name')
 
 def executable(name, env):
     value=os.environ.get(env) or shutil.which(name)
@@ -21,7 +33,7 @@ def executable(name, env):
     return found
 
 def run(command, timeout=180, env=None):
-    result=subprocess.run(command,capture_output=True,text=True,timeout=timeout,env=env)
+    result=subprocess.run(command,capture_output=True,text=True,encoding='utf-8',errors='replace',timeout=timeout,env=env)
     if result.returncode:
         raise SpecError(result.stderr.strip() or result.stdout.strip() or f"Command failed: {command[0]}")
     return result.stdout
@@ -105,6 +117,9 @@ def main():
     for name in ("scene","style","structure","output","config"):
         parser.add_argument("--"+name,required=name in ("scene","structure"),type=Path)
     parser.add_argument("--validate-only",action="store_true")
+    parser.add_argument("--draft",action="store_true",help="Render unresolved design requirements as a non-final draft")
+    parser.add_argument("--next-output",action="store_true",help="Select a free numbered filename without deleting outputs")
+    parser.add_argument("--design-plan",type=Path)
     parser.add_argument("--pptx-only",action="store_true",help="Explicitly skip preview; not visually verified")
     parser.add_argument("--renderer",choices=("libreoffice","powerpoint","none"))
     args=parser.parse_args()
@@ -113,6 +128,10 @@ def main():
         if args.config and not args.config.is_file():
             raise SpecError("Missing config: " + str(args.config))
         config=resolve_config(args.config, args.scene.resolve().parent)
+        initial_policy=policy_record(config)
+        if initial_policy:
+            config['communication_policy']=initial_policy['policy']
+        print(announce(config), file=sys.stderr)
         if args.pptx_only and args.renderer not in (None,"none"):
             raise SpecError("--pptx-only conflicts with --renderer")
         renderer="none" if args.pptx_only else (args.renderer or config["output"]["renderer"])
@@ -126,12 +145,21 @@ def main():
             if not config["output"]["filename"]:
                 raise SpecError("Choose a topic-based --output filename or output.filename")
             args.output=Path(config["output"]["directory"])/config["output"]["filename"]
-        scene=compile_scene(args.scene.resolve(),args.style.resolve(),args.structure.resolve())
+        scene=compile_scene(args.scene.resolve(),args.style.resolve(),args.structure.resolve(),allow_draft=args.draft)
+        content_check=check_content(args.scene.resolve().parent,scene)
+        policy=policy_record(config,scene)
+        plan_path = args.design_plan or args.scene.resolve().with_name('design-plan.yaml')
+        if args.design_plan and not plan_path.is_file():
+            raise SpecError('Missing design plan: ' + str(plan_path))
+        plan = check_plan(plan_path, scene) if plan_path.is_file() else None
+        design_checks = inspect_design(scene, plan)
         if config["size_explicit"] and scene["canvas"] != config["canvas"]:
             raise SpecError("Scene canvas conflicts with config; redesign before rendering")
         if args.validate_only:
             print("Scene valid; visual review still required"); return 0
         output=args.output.resolve()
+        if args.next_output:
+            output = next_output_path(output)
         previews=output.with_suffix(".preview")
         pdf_output=output.with_suffix(".pdf") if config["output"]["pdf"] else None
         if output.suffix.lower()!=".pptx": raise SpecError("Output must end in .pptx")
@@ -154,12 +182,23 @@ def main():
         else:
             rendered=work/"preview"
         rendered.mkdir(exist_ok=True)
-        status="not_visually_reviewed" if no_preview else "pending_visual_review"
+        status="draft" if args.draft else ("not_visually_reviewed" if no_preview else "pending_visual_review")
+        (rendered/'design-checks.json').write_text(json.dumps(design_checks,ensure_ascii=False,indent=2),encoding='utf-8')
+        if plan:
+            (rendered/'design-plan.json').write_text(json.dumps(plan,ensure_ascii=False,indent=2),encoding='utf-8')
+        for name, value in (('content-check.json',content_check),('policy-record.json',policy)):
+            if value is not None:
+                (rendered/name).write_text(json.dumps(value,ensure_ascii=False,indent=2),encoding='utf-8')
         receipt.update(sha256=source_hash(candidate),engine="pptxgenjs",decksmith_version=read_version(),preview_renderer=None if no_preview else renderer)
         (rendered/"validation.json").write_text(json.dumps(receipt,indent=2),encoding="utf-8")
         config["canvas"]=scene["canvas"]
         config["output"].update(directory=str(output.parent),filename=output.name)
         manifest={"status":status,"output_sha256":receipt["sha256"],
+            "preview_sha256":{p.name:source_hash(p) for p in sorted(rendered.glob('slide-*.png'))},
+            "design_plan_sha256":source_hash(rendered/'design-plan.json') if plan else None,
+            "design_checks_sha256":source_hash(rendered/'design-checks.json'),
+            "workflow_records":{name:source_hash(rendered/name) for name in ('content-check.json','policy-record.json') if (rendered/name).is_file()},
+            "delivery_status":"awaiting_images" if policy and any(f['choice']=='placeholder' for f in policy.get('image_fallbacks',[])) else "standard",
             "decksmith_version":read_version(),
             "project_settings":config,"policy_enforcement":"agent_instructions_not_network_sandbox",
             "style_sha256":scene["style_sha256"],"structure_sha256":scene["structure_sha256"],
@@ -175,7 +214,7 @@ def main():
         if pdf_output:
             with pdf_output.open("xb") as target, (work/"pdf"/"candidate.pdf").open("rb") as source:
                 shutil.copyfileobj(source,target)
-        print(json.dumps({"decksmith_version":read_version(),"output":str(output),"preview":None if no_preview else str(previews),"reports":str(previews),"pdf":str(pdf_output) if pdf_output else None,"status":status}))
+        print(json.dumps({"decksmith_version":read_version(),"output":str(output),"preview":None if no_preview else str(previews),"reports":str(previews),"pdf":str(pdf_output) if pdf_output else None,"status":status,"delivery_status":manifest['delivery_status']}))
         return 0
     except (SpecError,OSError,ValueError,subprocess.TimeoutExpired) as error:
         print(f"DeckSmith: {error}",file=sys.stderr); return 2

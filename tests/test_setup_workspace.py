@@ -71,6 +71,8 @@ class WorkspaceSetupTests(unittest.TestCase):
             for host in ("codex", "claude", "gemini"):
                 distribution = package(host, base / host)
                 self.assertEqual((distribution/"VERSION").read_text(),(distribution/"skills/decksmith/VERSION").read_text())
+                self.assertEqual((distribution/'templates/decksmith.yaml').read_bytes(),
+                                 (distribution/'skills/decksmith/assets/decksmith.yaml').read_bytes())
                 self.assertIn("18323a3f5201d08e8afc", (distribution / "USER_GUIDE.md").read_text())
                 workspace = base / (host + " workspace")
                 workspace.mkdir()

@@ -43,7 +43,7 @@ slides:
 
 すべての座標とサイズは96DPIのpx。キャンバスを固定しない。elementsの順番が背面から前面への重なり順。全要素の共通項目はid/type/x/y/width/height。任意でrotation（度）、overflow_reason（意図的なはみ出しの説明）。
 
-- text: textまたはrunsの片方。font/size/colorが必須。bold/italic/align（left/center/right/justify）/vertical（top/middle/bottom）/line_spacingが任意。runsは{text, font?, size?, color?, bold?, italic?}の配列で、部分強調と書体の混在を表す。自動縮小しない。
+- text: textまたはrunsの片方。font/size/colorが必須。bold/italic/align（left/center/right/justify）/vertical（top/middle/bottom）/line_spacing/trackingが任意。trackingはpx単位の字間加算（負値で詰める）。runsは{text, font?, size?, color?, bold?, italic?, tracking?}の配列。roleはdisplay/heading/body/caption/label。design-planがある場合は全textに定義済みroleが必要。自動縮小しない。
 - shape: geometryはrect/roundRect/ellipse/line/triangle/rightArrow。fill/strokeは#RRGGBB、#RRGGBBAAまたはnone。stroke_width/radiusはpx。水平線は高さを小さい正数にする。
 - path: pointsは要素のローカル座標の[x,y]配列。closed、fill、stroke、stroke_widthが任意。正確な関係線・編集可能な図解のための機能。
 - image: scene.yamlのディレクトリ内の相対path、altが必須。PNG/JPEG。WebP等は事前にPNGへ変換する。fitはcontain（既定）またはcover。promptを記録可能。回転は共通のrotationを使う。
@@ -51,6 +51,8 @@ slides:
 未知のキー/要素はエラー。表やグラフの専用要素、クリッピングマスク、グループ変換はこの初期アダプターでは未実装。要求された場合は対応を追加する。黙って無視しない。グループ相当の配置は各要素の明示座標で表現できる。
 
 requirementsはstyle.yamlのすべての末端値を重複なく網羅する。not_applicableの場合はreasonを記録し、AIが妥当性を確認する。ソース指紋と台帳は追跡可能性のためであり、AIによる意味理解の正しさを自動保証しない。
+
+状態の詳細とreason_kind/approvalの必須条件は[デザイン方針](design-plan.md)を参照する。未達はblocked/asset_pendingで保持し、--draft以外では拒否する。
 
 ## スライドサイズ
 

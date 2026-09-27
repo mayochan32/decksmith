@@ -6,6 +6,8 @@
 
 元YAMLの各末端値にJSON Pointerでsourceを付ける。キーの/は~1、~は~0にエスケープする。配列は/0などで参照する。台帳のinterpretationへ具体的な実現方法を書く。implementedにはスライドIDまたはslideID/elementIDのtargetsを付ける。not_applicableには理由が必要。単に実現が難しい指定をnot_applicableにしない。
 
+[デザイン方針](design-plan.md)の中間設計と状態区分を使う。非該当にはreason_kindも必要。実現不能はblocked、素材不足はasset_pending。ホスト画像生成が使えないだけでimages.amountをnoneへ書き換えたり、写真を不要と再解釈しない。
+
 元のYAMLと台帳の対応は自動検査できるが、その解釈が正しいかはAIが視覚的に照合する。台帳の自己申告を品質保証にしない。Style名などメタデータはnot_applicableでよい。陰影禁止のような全体ルールは適用ページをtargetsにする。
 
 ## ページ設計

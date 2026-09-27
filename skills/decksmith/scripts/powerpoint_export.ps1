@@ -1,9 +1,18 @@
 param(
     [string]$RequestPath,
-    [switch]$Probe
+    [switch]$Probe,
+    [switch]$Fonts
 )
 $ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
 try {
+    if ($Fonts) {
+        Add-Type -AssemblyName System.Drawing
+        $collection = New-Object System.Drawing.Text.InstalledFontCollection
+        try { @($collection.Families | ForEach-Object { $_.Name } | Sort-Object -Unique) | ConvertTo-Json }
+        finally { $collection.Dispose() }
+        exit 0
+    }
     $powerPointType = [type]::GetTypeFromProgID('PowerPoint.Application')
     if ($null -eq $powerPointType) { throw 'Desktop PowerPoint COM registration was not found.' }
     if ($Probe) {
@@ -40,7 +49,12 @@ try {
             }
         }
         if ($request.pdf) {
-            $presentation.ExportAsFixedFormat([string]$request.pdf, 2)
+            # SaveAs has a simpler COM signature than ExportAsFixedFormat. Supply
+            # every argument explicitly: ppSaveAsPDF=32, msoFalse=0. Only the
+            # generated read-only candidate is open; never save over its PPTX.
+            # https://learn.microsoft.com/office/vba/api/powerpoint.presentation.saveas
+            try { $presentation.SaveAs([string]$request.pdf, [int]32, [int]0) }
+            catch { throw ('PDF_EXPORT_FAILED: ' + $_.Exception.Message) }
         }
     } finally {
         if ($null -ne $presentation) {

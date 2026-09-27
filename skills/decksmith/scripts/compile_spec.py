@@ -76,13 +76,13 @@ def compact(value):
     return re.sub(r"\s+","",value)
 
 TYPES = {
-    "text":"text runs font size color bold italic align vertical line_spacing",
+    "text":"text runs font size color bold italic align vertical line_spacing tracking role",
     "shape":"geometry fill stroke stroke_width radius",
     "path":"points closed fill stroke stroke_width",
     "image":"path alt fit prompt",
 }
 
-def compile_scene(scene_path, style_path, structure_path):
+def compile_scene(scene_path, style_path, structure_path, allow_draft=False):
     scene = copy.deepcopy(load_mapping(scene_path))
     keys(scene,"schema_version canvas style_sha256 structure_sha256 requirements slides","scene")
     if scene.get("schema_version") != "1.0":
@@ -151,14 +151,18 @@ def compile_scene(scene_path, style_path, structure_path):
                 if e.get("vertical","top") not in ("top","middle","bottom"):
                     raise SpecError(f"{eid}: invalid vertical")
                 if "line_spacing" in e: number(e["line_spacing"],eid+".line_spacing",0.1)
+                if "tracking" in e: number(e["tracking"],eid+".tracking")
+                if "role" in e and e["role"] not in ("display","heading","body","caption","label"):
+                    raise SpecError(f"{eid}: invalid text role")
                 if "runs" in e:
                     if not isinstance(e["runs"],list) or not e["runs"]:
                         raise SpecError(f"{eid}: empty runs")
                     for run in e["runs"]:
-                        keys(run,"text font size color bold italic",eid+".run")
+                        keys(run,"text font size color bold italic tracking",eid+".run")
                         text(run.get("text"),eid+".run.text")
                         if "size" in run: number(run["size"],eid+".run.size",1)
                         if "color" in run: color(run["color"],eid+".run.color")
+                        if "tracking" in run: number(run["tracking"],eid+".run.tracking")
                 text(text_content(e),eid+".text")
             elif kind == "image":
                 raw=Path(text(e.get("path"),eid+".path"))
@@ -199,18 +203,27 @@ def compile_scene(scene_path, style_path, structure_path):
     pointers=set(leaves(load_mapping(style_path)))
     covered=set()
     for req in requirements:
-        keys(req,"source interpretation status targets reason","requirement")
+        keys(req,"source interpretation status targets reason reason_kind approval","requirement")
         pointer=req.get("source")
         if pointer not in pointers or pointer in covered:
             raise SpecError(f"Invalid/duplicate style pointer: {pointer}")
         covered.add(pointer)
         text(req.get("interpretation"),"requirement interpretation")
-        if req.get("status")=="implemented":
+        if req.get("status") in ("implemented", "approved_alternative"):
             targets=req.get("targets")
             if not isinstance(targets,list) or not targets or not set(targets)<=target_ids:
                 raise SpecError(f"{pointer}: implemented requirement needs valid targets")
+            if req["status"] == "approved_alternative":
+                text(req.get("reason"), "alternative reason")
+                text(req.get("approval"), "user approval evidence")
         elif req.get("status")=="not_applicable":
             text(req.get("reason"),"not_applicable reason")
+            if req.get("reason_kind") not in ("metadata", "content_absent", "catalog_not_selected", "user_excluded"):
+                raise SpecError(f"{pointer}: not_applicable needs reason_kind; unavailable assets are asset_pending")
+            if req["reason_kind"] == "user_excluded":
+                text(req.get("approval"), "user exclusion evidence")
+        elif req.get("status") in ("blocked", "asset_pending") and allow_draft:
+            text(req.get("reason"), "unresolved reason")
         else:
             raise SpecError(f"{pointer}: unresolved requirement; no silent substitution")
     if pointers-covered:

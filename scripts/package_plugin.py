@@ -11,12 +11,14 @@ def package(host,output):
     if target.exists(): raise ValueError("Refusing to overwrite package: "+str(target))
     manifest={"codex":".codex-plugin","claude":".claude-plugin","gemini":"gemini-extension.json"}[host]
     target.mkdir(parents=True)
+    (target/"templates").mkdir()
+    shutil.copy2(root/"skills/decksmith/assets/decksmith.yaml",target/"templates/decksmith.yaml")
     shutil.copy2(root/"skills/decksmith/VERSION",target/"VERSION")
     shutil.copytree(root/"skills",target/"skills",ignore=shutil.ignore_patterns("node_modules","__pycache__","*.pyc"))
     source=root/manifest
     if source.is_dir(): shutil.copytree(source,target/manifest)
     else: shutil.copy2(source,target/manifest)
-    for filename in ("README.md","USER_GUIDE.md","LICENSE"):
+    for filename in ("README.md","USER_GUIDE.md","PORTABLE_GUIDE.md","LICENSE"):
         if (root/filename).is_file(): shutil.copy2(root/filename,target/filename)
     (target/"scripts").mkdir()
     shutil.copy2(root/"scripts/setup_workspace.py",target/"scripts/setup_workspace.py")

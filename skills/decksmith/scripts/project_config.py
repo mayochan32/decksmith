@@ -52,7 +52,7 @@ def resolve_config(path=None, base=None):
         w = max(1, round(h * ratio))
     elif h is None:
         h = max(1, round(w / ratio))
-    privacy = data.get("privacy", {}).get("mode", "normal")
+    privacy = data.get("privacy", {}).get("mode", "restricted")
     text_amount = data.get("text", {}).get("amount", "normal")
     if text_amount not in ("minimal", "less", "normal", "more", "dense"):
         raise SpecError("text.amount must be one of: minimal, less, normal, more, dense")
@@ -81,7 +81,7 @@ def resolve_config(path=None, base=None):
     if renderer == "none" and pdf:
         raise SpecError("output.pdf cannot be true with output.renderer=none")
     filename = output.get("filename")
-    if "filename" in output:
+    if output.get("filename") is not None:
         filename = nonempty(filename, "output.filename")
         if "/" in filename or "\\" in filename or Path(filename).suffix.lower() != ".pptx":
             raise SpecError("output.filename must be a filename ending in .pptx")
@@ -91,15 +91,22 @@ def resolve_config(path=None, base=None):
             raise SpecError(label + " must be a local path, not a URL")
         p = Path(value).expanduser()
         return str((base / p).resolve())
-    inputs = {name:local_path(value, "input." + name) for name,value in data.get("input", {}).items()}
+    inputs = {name:local_path(value, "input." + name) for name,value in data.get("input", {}).items() if value is not None}
     for name, value in inputs.items():
         if not Path(value).is_file():
             raise SpecError("Missing input." + name + ": " + value)
-    language = nonempty(data["language"], "language") if "language" in data else None
+    language = nonempty(data["language"], "language") if data.get("language") is not None else None
     return {"config_path":str(path) if path.is_file() else None,
             "canvas":{"width":w,"height":h}, "size_explicit":bool(slide),
             "privacy":{"mode":privacy}, "images":images, "text":{"amount":text_amount}, "language":language,
-            "input":inputs, "output":{"directory":local_path(output.get("directory", "output"), "output.directory"),
+            "communication_policy":{
+                "mode_source":"config" if "mode" in data.get("privacy", {}) else "default",
+                "web_search":"human_approval_required" if privacy == "normal" else "explicit_exception_approval_required",
+                "external_services":"human_approval_required" if privacy == "normal" else "explicit_exception_approval_required",
+                "host_image_generation":"disabled" if images["mode"] == "provided_only" or images["amount"] == "none" else "allowed_if_available",
+                "host_image_capability":"unverified", "local_processing":"allowed",
+                "enforcement":"agent_instructions_not_network_sandbox"},
+            "input":inputs, "output":{"directory":local_path(output.get("directory", "../output"), "output.directory"),
                                         "filename":filename, "pdf":pdf, "renderer":renderer}}
 
 

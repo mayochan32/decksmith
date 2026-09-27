@@ -1,0 +1,28 @@
+# DeckSmith 制作設定の雛形。setting/decksmith.yamlへコピーして編集してください。
+# デザインそのものは style.yaml に記述します（スタイルプリセットではありません）。
+# null は「未指定」。AIが依頼・原稿から判断します。空文字とは異なります。
+slide:
+  width_px: 1920
+  height_px: 1080
+  aspect_ratio: '16:9' # 例: '4:3', '9:16'。寸法も整合するよう変更する
+privacy:
+  mode: restricted # restricted（既定）/ normal。どちらもWeb・外部サービスは人間の事前承認が必要
+input:
+  style: null # 例: style.yaml。指定する場合は存在するファイル
+  brief: null # 例: brief.md。プロンプトだけで内容を伝える場合はnull
+output:
+  directory: ../output # 設定ファイル基準。settingと同列のoutputへ保存
+  filename: null # 例: presentation.pptx。未指定ならAIが題材から決める
+  renderer: libreoffice # libreoffice / powerpoint（Windows）/ none
+  pdf: false # noneではtrueにできない
+images:
+  mode: auto # auto / provided_only
+  amount: normal # normal / more / less / none
+  type: auto # auto / illust / photo / icon / anime
+  color: color # color / gray / monotone
+  plan: show # show / confirm / skip
+text:
+  amount: normal # minimal / less / normal / more / dense
+language: null # 例: 日本語 / english / ja / en。未指定なら依頼・原稿から判断
+# Windows同梱版ではrendererをpowerpointまたはnoneへ明示変更してください。
+# CLI例: decksmith.cmd init --project <資料フォルダー> --renderer powerpoint
