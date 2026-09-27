@@ -11,6 +11,13 @@
 
 ### 1.1. 配布物を選ぶ
 
+v0.8.1以降の配布ZIPは、AIツール共通の次の2種類です。
+
+- `decksmith-vX.Y.Z.zip`：すべての対応AI環境向け資材を含む通常版。
+- `decksmith-vX.Y.Z-portable-win-x64.zip`：実行環境を同梱したWindows x64用PORTABLE版。
+
+Codex・Claude Code・GitHub Copilot・Gemini CLIごとのZIPは選びません。通常版の展開先には各ツールの登録情報と共通のSkillがあり、以下の導入手順で利用先を選びます。使わないAIツールの準備は不要です。GitHubが自動表示するSource code ZIPではなく、上記の配布ZIPを選んでください。
+
 [GitHub Releases](https://github.com/mayochan32/decksmith/releases)から、利用する版の配布物を入手して展開します。各リリースに実際に添付されているファイルを確認してください。ソースZIPにはPORTABLE用ランタイムは含まれません。
 
 | 方式 | 対象 | 準備 |
@@ -18,7 +25,7 @@
 | Windows PORTABLE版（正式な配布方式） | Windows x64 | ZIPを丸ごと展開。Python・Node.js・npmの個別導入は不要 |
 | 通常版 | Windows／Mac | Python 3.9+、Node.js 18+、npmと描画ライブラリを用意 |
 
-どちらもAIエージェントと利用契約・認証、必要なフォントを別途用意します。ここではVS CodeのCodex／Claude Code拡張から使う手順を示します。DeckSmith自体はVS Code拡張ではなく、AIが読むSkillとローカルの描画処理です。
+どちらもAIエージェントと利用契約・認証、必要なフォントを別途用意します。ここではVS CodeのCodex／Claude Code／GitHub Copilot（Agentモード）から使う手順を示します。DeckSmith自体はVS Code拡張ではなく、AIが読むSkillとローカルの描画処理です。
 
 ### 1.2. Windows PORTABLE版を導入する
 
@@ -54,14 +61,20 @@ python3 scripts/setup_workspace.py --host codex --workspace "/path/to/my-present
 
 # Claude Code用
 python3 scripts/setup_workspace.py --host claude --workspace "/path/to/my-presentations"
+
+# GitHub Copilot用
+python3 scripts/setup_workspace.py --host copilot --workspace "/path/to/my-presentations"
 ```
 
-両方使う場合は `--host both`。Windowsでpython3がない場合は、インストール済みの `python` または `py -3` を使います。パス例は `C:\work\my-presentations` です。
+CodexとClaude Codeを両方登録する場合は `--host both`（従来どおり2種類のみ）。Copilotは `--host copilot` です。Windowsでpython3がない場合は、インストール済みの `python` または `py -3` を使います。パス例は `C:\work\my-presentations` です。
 
 | 利用先 | my-presentations内の配置先 | 呼び出し |
 | --- | --- | --- |
 | Codex | `.agents/skills/decksmith/` | `$decksmith` |
 | Claude Code | `.claude/skills/decksmith/` | `/decksmith` |
+| GitHub Copilot（VS Code Agentモード） | `.github/skills/decksmith/` | `/decksmith` またはSKILL.mdを指定 |
+
+Copilotの配置先は[VS Code公式のAgent Skills仕様](https://code.visualstudio.com/docs/agent-customization/agent-skills)に従います。Copilotは `.agents` や `.claude` のSkillも認識するため、既に同じSkillを置いている場合は重複登録せず、そのSKILL.mdを指定して利用できます。Gemini CLI用配布物も維持しますが、導入・制作の一連の動作は未検証です。ターミナル上のGemini CLI向けで、ブラウザー版GeminiやGemini Code Assist用ではありません。
 
 登録処理は既存Skillを上書きせず、ネットワーク接続やソフトのインストールも行いません。`--dry-run` で事前確認できます。手動コピーの場合も `SKILL.md` だけでなくSkillフォルダー全体が必要です。
 
@@ -75,6 +88,10 @@ python3 .agents/skills/decksmith/scripts/doctor.py
 # Claude Code用
 npm ci --prefix .claude/skills/decksmith --ignore-scripts --no-audit --no-fund
 python3 .claude/skills/decksmith/scripts/doctor.py
+
+# GitHub Copilot用
+npm ci --prefix .github/skills/decksmith --ignore-scripts --no-audit --no-fund
+python3 .github/skills/decksmith/scripts/doctor.py
 ```
 
 利用する方だけ実行してください。両方登録した場合は両方で実行します。npmは初回にネットワークを使います。AIが実行する場合も取得の目的・利用先を示し、人間の承認を得ます。
@@ -89,7 +106,7 @@ WSL・SSH・Dev Containerでは、AIが実行する側に依存ソフトが必�
 
 ```text
 my-presentations/
-  .agents/skills/decksmith/  ← 通常版Codex用。Claude用は .claude/skills/decksmith/
+  .agents/skills/decksmith/  ← 通常版Codex用。Claudeは .claude/skills/decksmith/、Copilotは .github/skills/decksmith/
   setting/
     decksmith.yaml          ← 任意。サイズ、言語、通信制限、入出力などの制作設定
     style.yaml              ← 配色、書体、構図などのデザイン指定
@@ -155,7 +172,7 @@ PORTABLE版は、PowerPoint用の値を設定して雛形を作れます。
 & 'C:\Tools\decksmith-portable\decksmith.cmd' init --project 'C:\work\my-presentations\setting' --renderer powerpoint
 ```
 
-PPTXのみなら `--renderer none`。通常版のCodex配置なら、my-presentations内で次を実行します（Claude Codeは `.agents` を `.claude` に読み替え）。
+PPTXのみなら `--renderer none`。通常版のCodex配置なら、my-presentations内で次を実行します（Claude Codeは `.agents` を `.claude`、Copilotは `.github` に読み替え）。
 
 ```bash
 python3 .agents/skills/decksmith/scripts/project_init.py --project setting
@@ -260,7 +277,7 @@ VS Codeで `my-presentations/` を開き、AIエージェントへ依頼しま�
 
 #### PORTABLE版の依頼例
 
-Codex・Claude Codeいずれも、実際の展開先と作業フォルダーを指定します。
+Codex・Claude Code・GitHub Copilotいずれも、実際の展開先と作業フォルダーを指定します。
 
 ```text
 C:\Tools\decksmith-portable\skills\decksmith\SKILL.md と
@@ -283,7 +300,7 @@ setting/brief.mdに記載した題材・対象読者・目的・必須内容に�
 不明点や矛盾は確認してください。
 ```
 
-Claude Codeでは先頭を `/decksmith` に置き換えます。PPTXのみの設定なら「全ページのプレビューを確認」を「見た目未確認として納品」に変えてください。
+Claude Codeでは先頭を `/decksmith` に置き換えます。CopilotではAgentモードにし、先頭を `/decksmith`、または「`.github/skills/decksmith/SKILL.md` を読んで、その手順に従ってください」に置き換えます。PPTXのみの設定なら「全ページのプレビューを確認」を「見た目未確認として納品」に変えてください。
 
 #### 通常版：内容をプロンプトで伝える
 
@@ -342,7 +359,7 @@ export DECKSMITH_SOFFICE="/Applications/LibreOffice.app/Contents/MacOS/soffice"
 python3 .agents/skills/decksmith/scripts/doctor.py
 ```
 
-Claude Codeでは `.agents` を `.claude` に読み替えてください。別の導入先なら実際のパスを指定します。
+Claude Codeでは `.agents` を `.claude`、Copilotでは `.github` に読み替えてください。別の導入先なら実際のパスを指定します。
 
 exportはそのターミナルと子プロセスだけに有効です。起動済みの拡張へ自動反映されるとは限りません。AIにも「診断と生成の各実行でDECKSMITH_SOFFICEにこのパスを指定して」と伝えてください。
 
@@ -373,7 +390,7 @@ exportはそのターミナルと子プロセスだけに有効です。起動�
 ```bash
 # 通常版（my-presentations内で実行）
 python3 .agents/skills/decksmith/scripts/create_deck.py --version
-# Claude Code用は .agents を .claude に変更
+# Claude Code用は .agents を .claude、Copilot用は .github に変更
 ```
 
 生成開始時と検証・レビュー記録にも版番号が残ります。スライド上には版番号を追加しません。

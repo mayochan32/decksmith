@@ -1,4 +1,5 @@
 import re
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -20,9 +21,16 @@ class DistributionDocsTests(unittest.TestCase):
     def test_root_guides_have_valid_local_links(self):
         self.check_links(ROOT)
 
-    def test_all_provider_packages_include_linked_portable_guide(self):
+    def test_unified_package_includes_all_manifests_and_linked_guides(self):
         with tempfile.TemporaryDirectory() as raw:
-            for host in ('codex','claude','gemini'):
-                target=package(host,Path(raw)/host)
-                self.check_links(target)
-                self.assertTrue((target/'templates/decksmith.yaml').is_file())
+            target=package(Path(raw))
+            self.check_links(target)
+            self.assertTrue((target/'templates/decksmith.yaml').is_file())
+            version=(target/'VERSION').read_text().strip().removeprefix('v')
+            for name in ('.codex-plugin/plugin.json','.claude-plugin/plugin.json','gemini-extension.json'):
+                manifest=json.loads((target/name).read_text())
+                self.assertEqual(manifest['version'],version)
+                if 'skills' in manifest:
+                    self.assertTrue((target/manifest['skills']/'decksmith/SKILL.md').is_file())
+            self.assertEqual(list((target/'skills').iterdir()),[target/'skills/decksmith'])
+            self.assertFalse((target/'skills/decksmith/node_modules').exists())

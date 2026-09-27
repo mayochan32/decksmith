@@ -9,6 +9,13 @@ DeckSmithは、スタイルYAMLをAIが解釈して、内容に合わせた編�
 
 ## はじめる
 
+配布ZIPは次の2種類です。AIツール別にダウンロードし直す必要はありません。
+
+- `decksmith-vX.Y.Z.zip`：通常版。Codex・Claude Code・GitHub Copilot・Gemini CLI用の共通Skill、登録情報、導入処理を同梱。実行環境は別途準備します。
+- `decksmith-vX.Y.Z-portable-win-x64.zip`：Windows用PORTABLE版。共通SkillとPython・Node.js等を同梱します。
+
+通常版には各ツールの登録情報が共存しますが、利用しないAIツールのインストールや契約は不要です。Gemini CLIでの実利用は未検証です。
+
 作業フォルダーは、原稿・設定・参考資料を入れる `setting/` と、生成結果を保存する `output/` を同列に分けます。`setting/decksmith.yaml` の出力先は既定で `../output` です。
 
 - 手順全体：[利用ガイド](USER_GUIDE.md)
@@ -57,7 +64,7 @@ Macや自分のPython／Node.jsを使う環境には、通常版を用意して�
 
 ## 利用環境と対応範囲
 
-Codex、Claude Code、Gemini CLI向けに共通のSkillと描画エンジンを配布します。DeckSmith自体は独立したVS Code拡張ではなく、ブラウザー版チャットへの直接導入も対象外です。AIや画像生成機能が異なれば、同じ指定でも結果は異なります。
+Codex、Claude Code、GitHub Copilot（VS CodeのAgentモード）、Gemini CLI向けに共通のSkillと描画エンジンを用意しています。Copilotは `.github/skills/decksmith/` へ登録します。Gemini CLIはターミナルでの実行を想定し、実利用は未検証のまま提供対象に残しています。DeckSmith自体は独立したVS Code拡張ではなく、ブラウザー版チャットへの直接導入も対象外です。AIや画像生成機能が異なれば、同じ指定でも結果は異なります。
 
 通常版はPython 3.9+、Node.js 18+と描画ライブラリを用意します。プレビューはLibreOffice＋Poppler、またはWindowsのPowerPointを使用。PPTXのみなら変換ソフトは不要です。YAMLライブラリは同梱しています。
 

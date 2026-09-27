@@ -9,7 +9,7 @@
 5. ホストに優先利用すべき依存ランタイムや操作記録の指示がある場合はその指示に従い、実行前に適用する。共有スクリプトからホスト専用処理は呼び出さない。
 6. フォントは埋め込まれない。指定フォントの有無を確認し、代替が必要なら役割を保って記録する。LibreOfficeプレビューとPowerPoint本体の描画には差があり得る。
 
-Codexは.codex-plugin/plugin.json、Claude Codeは.claude-plugin/plugin.json、Gemini CLIはgemini-extension.jsonを入口にする。共通のskills/decksmithを使用する。ブラウザー版のChatGPT・Claude・Geminiへの直接導入は対象外。
+Codexは.codex-plugin/plugin.json、Claude Codeは.claude-plugin/plugin.json、Gemini CLIはgemini-extension.jsonを入口にする。GitHub CopilotはVS CodeのAgentモードを対象とし、setup_workspace.py --host copilotで.github/skills/decksmithへ共通Skill全体を配置する。候補に出ない場合はSKILL.mdを直接指定する。既存の.agents/.claude配置も認識されるため同名Skillの重複登録を避ける。根拠: https://code.visualstudio.com/docs/agent-customization/agent-skills 。PORTABLE版では配置コピーせず展開先のSKILL.mdとdecksmith.cmdを直接指定する。共通のskills/decksmithを使用する。Gemini CLIはターミナル実行を想定し、導入・制作の一連の動作は未検証。Gemini Code Assist用ではない。ブラウザー版のChatGPT・Claude・Geminiへの直接導入は対象外。
 
 画像生成は[画像素材の接続契約](image-assets.md)を読む。ホストに画像生成機能があると決めつけず、提供画像・生成機能・利用者が設定した外部サービスを区別する。
 

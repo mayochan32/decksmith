@@ -12,8 +12,8 @@ def setup(workspace, host, dry_run=False):
         raise ValueError("Create and select an existing workspace directory first.")
     if not (source/"SKILL.md").is_file():
         raise ValueError("Incomplete distribution: skills/decksmith/SKILL.md is missing.")
-    roots={"codex":".agents","claude":".claude"}
-    selected=list(roots) if host=="both" else [host]
+    roots={"codex":".agents","claude":".claude","copilot":".github"}
+    selected=["codex","claude"] if host=="both" else [host]
     targets=[workspace/roots[h]/"skills"/"decksmith" for h in selected]
     # Preflight every target before copying, including broken symlinks.
     for target in targets:
@@ -33,7 +33,7 @@ def setup(workspace, host, dry_run=False):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--workspace",required=True,type=Path)
-    parser.add_argument("--host",required=True,choices=("codex","claude","both"))
+    parser.add_argument("--host",required=True,choices=("codex","claude","copilot","both"))
     parser.add_argument("--dry-run",action="store_true")
     args=parser.parse_args()
     try:

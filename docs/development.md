@@ -36,10 +36,10 @@ python3 skills/decksmith/scripts/create_deck.py \
 python3 -m unittest discover -s tests
 # 描画環境がある場合
 DECKSMITH_RENDER_TEST=1 python3 -m unittest discover -s tests
-python3 scripts/package_plugin.py --host claude --output dist/claude
+python3 scripts/package_plugin.py --output dist/standard
 ```
 
-hostはcodex、claude、gemini。既存の配布フォルダーは上書きしない。版番号の不一致はエラーにし、配布ルートにVERSIONを同梱する。開発サンプル・旧エンジン・node_modulesは配布対象外。依存はロックファイルから導入する。
+通常版は全ホスト共通。package_plugin.pyの--hostは廃止し、Codex・Claude・Geminiの登録情報とCopilotを含む導入処理を一緒に配布する。既存の配布フォルダーは上書きしない。版番号の不一致はエラーにし、配布ルートにVERSIONを同梱する。開発サンプル・旧エンジン・node_modulesは配布対象外。依存はロックファイルから導入する。ZIP名はdecksmith-vX.Y.Z.zip。もう1つの配布物は[Windows PORTABLE版](portable-build.md)のdecksmith-vX.Y.Z-portable-win-x64.zipで、ホスト別ZIPは公開しない。
 
 ## Windows PowerPointの受入確認
 

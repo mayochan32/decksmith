@@ -8,6 +8,8 @@ LibreOffice・Popplerも不要です。ただし、AIエージェントとその
 
 ## 1. 導入
 
+配布物は通常版 `decksmith-vX.Y.Z.zip` と、このWindows用 `decksmith-vX.Y.Z-portable-win-x64.zip` の2種類です。どちらもAIツール共通で、Codex・Claude Code・Copilot・Gemini CLI別のZIPはありません。Gemini CLIの実利用は未検証です。
+
 1. [GitHub Releases](https://github.com/mayochan32/decksmith/releases)でWindows x64用PORTABLE配布物を確認し、ZIPを入手します。ソースZIPはランタイム同梱版ではありません。
 2. 例えば `C:\Tools\decksmith-portable` に、ZIPの全ファイルを構成を保って展開します。
 3. VS Codeと利用するAIエージェントを準備し、サインインします。
@@ -64,7 +66,7 @@ noneではPNG・PDFは生成せず、PPTXを「見た目未確認」として出
 
 ## 3. AIに生成を依頼する
 
-Codex・Claude Codeなどへ、実際のパスを指定して依頼します。呼び出し候補へ登録されていることを前提にしません。
+Codex・Claude Code・GitHub Copilot（VS CodeのAgentモード）などへ、実際のパスを指定して依頼します。呼び出し候補へ登録されていることを前提にしません。
 
 ```text
 C:\Tools\decksmith-portable\skills\decksmith\SKILL.md と
@@ -74,6 +76,8 @@ PowerPointを作成してください。
 実行には同梱のdecksmith.cmdを使ってください。
 PC側のPythonやNode.jsを使ったり、追加インストールしたりしないでください。
 ```
+
+Copilotも上記のSKILL.mdを直接指定し、共通のdecksmith.cmdを使います。PORTABLE版のSkillだけを `.github/skills/` へコピーしないでください。Gemini CLIも提供対象ですが実利用は未検証です。
 
 原稿や設定はプロンプトでも指定できます。AIが内部ファイルを作成し、同梱エンジンで生成します。利用者がscene.yamlなどを手書きする必要はありません。
 

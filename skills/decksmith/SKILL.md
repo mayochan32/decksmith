@@ -15,7 +15,7 @@ description: 題材・構成・任意のスタイルYAMLから、AIがページ�
 
 制作依頼を受けたら、外部操作・画像生成より前に[制作設定](references/project-settings.md)を読み、decksmith.yamlとプロンプトを解決する。privacyの既定はrestricted。開始時に通信モード、Web検索・外部サービスの承認条件、組み込み画像生成の許可と利用可否、ローカル処理の可否、利用中AIへの送信可能性を必ず表示する。normalを含む全モードでWeb検索・外部サービスは目的・利用先・送信情報を説明し、人間の事前承認を待つ。restrictedでは制限の例外であることも明示して承認を得る。設定値・画像計画の承認から通信の許可を推測しない。provided_onlyでは画像生成もしない。
 
-最初に[実行環境](references/host-runtime.md)を読み、scripts/doctor.pyで依存を確認する。共通エンジンはPythonとNode.jsを使い、Codex・Claude Code・Gemini CLIで同じシーンを描画する。別のPresentations Skillや特定AIのSDKは必須にしない。
+最初に[実行環境](references/host-runtime.md)を読み、scripts/doctor.pyで依存を確認する。共通エンジンはPythonとNode.jsを使い、Codex・Claude Code・GitHub Copilot（VS Code Agentモード）・Gemini CLIで共通エンジンを使用する。Gemini CLIでの実利用は未検証。別のPresentations Skillや特定AIのSDKは必須にしない。
 
 画像が必要ならホストの画像生成機能を確認して使用する。外部APIキーを前提にしない。機能なし・上限・生成失敗で必要画像を用意できない場合は、理由と対象ページを示して停止し、「画像なしで再配置」か「画像位置に四角を置き、中に編集可能な画像生成プロンプトを記載」かを人間に確認する。無回答で省略・図解への代替・外部サービスへの切り替えをしない。詳細は[画像素材](references/image-assets.md)。開発チャットの履歴、開発者の素材、リポジトリのartifacts/には依存しない。
 
