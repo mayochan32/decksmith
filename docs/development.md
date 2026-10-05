@@ -43,6 +43,8 @@ python3 scripts/package_plugin.py --output dist/standard
 
 ## Windows PowerPointの受入確認
 
+環境変数を制限した起動の回帰テストは、Windows実機で `DECKSMITH_WINDOWS_ENV_TEST=1` を設定してtest_process_environment.pyを実行する。SystemRoot/WINDIRを渡さずPython・Node.js・PowerShellを起動する（PowerPointは起動しない）。Mac上のモックテストだけではWindows API・プロセス起動は検証済みにならない。PORTABLE版でも同梱ランタイムでdoctor/buildを行い、補完通知、PPTX・PNG・PDF出力を別途確認する。親シェルや同梱Python自体が起動できないケースは環境側の対応が必要。
+
 Macでの単体テストはWindowsのCOM動作を検証しない。Windowsの対話ログイン環境でPowerPointの初期設定を済ませ、資料を保存してアプリを閉じ、PowerShellから次を実行する（このテストはPowerPointを起動する）。
 
 ```powershell

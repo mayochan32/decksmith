@@ -8,13 +8,17 @@ import sys
 
 
 def environment(root):
+    from process_environment import child_environment, announce_repair, powershell_path, REPAIR_OPTION
     env = {k: v for k, v in os.environ.items()
-           if not k.upper().startswith(('PYTHON', 'DECKSMITH_'))
-           and k.upper() not in ('NODE_OPTIONS', 'NODE_PATH')}
+           if (not k.upper().startswith(('PYTHON', 'DECKSMITH_'))
+               and k.upper() not in ('NODE_OPTIONS', 'NODE_PATH'))
+           or k.upper() == REPAIR_OPTION}
+    env, report = child_environment(env)
+    announce_repair(report)
     env['DECKSMITH_NODE'] = str(root / 'runtime/node/node.exe')
     env['DECKSMITH_NODE_MODULES'] = str(root / 'skills/decksmith/node_modules')
-    env['DECKSMITH_POWERSHELL'] = str(Path(os.environ.get('SystemRoot', r'C:\Windows')) /
-                                     'System32/WindowsPowerShell/v1.0/powershell.exe')
+    if sys.platform == 'win32':
+        env['DECKSMITH_POWERSHELL'] = powershell_path(env)
     return env
 
 

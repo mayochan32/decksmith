@@ -8,12 +8,18 @@ from pathlib import Path
 from create_deck import executable, run, SpecError, renderer_runtime
 from project_config import resolve_config
 from version import read_version
+from process_environment import child_environment
 
 def inspect(renderer="libreoffice"):
     result={"decksmith":{"version":read_version()},"python":{"ready":sys.version_info>=(3,9),"version":sys.version.split()[0]},
             "execution_context":{"platform":sys.platform,"python_executable":sys.executable,
                                  "cwd":str(Path.cwd()),"powershell_override":os.environ.get('DECKSMITH_POWERSHELL'),
                                  "sandbox":"not_detected; compare failing and successful host contexts"}}
+    try:
+        _, environment_report = child_environment()
+        result["execution_context"]["windows_environment"] = {"ready": True, **environment_report}
+    except ValueError as error:
+        result["execution_context"]["windows_environment"] = {"ready": False, "error": str(error)}
     required=[("node","DECKSMITH_NODE")]
     if renderer == "libreoffice":
         required.extend((("soffice","DECKSMITH_SOFFICE"),("pdftoppm","DECKSMITH_PDFTOPPM")))
@@ -21,7 +27,7 @@ def inspect(renderer="libreoffice"):
         try:
             value=executable(name,env)
             result[name]={"ready":True,"path":value}
-        except SpecError as error: result[name]={"ready":False,"error":str(error)}
+        except (SpecError,ValueError,OSError) as error: result[name]={"ready":False,"error":str(error)}
     try:
         node=executable("node","DECKSMITH_NODE")
         result["engine"]=json.loads(run([node,str(Path(__file__).with_name("build_deck.mjs")),"--check"]))
@@ -33,13 +39,15 @@ def inspect(renderer="libreoffice"):
             result["powerpoint"]={"ready":True,**renderer_runtime(renderer),"check":"COM registration only; export not yet verified"}
         except (SpecError,ValueError,OSError) as error:
             result["powerpoint"]={"ready":False,"stage":"powershell_probe","cause":"undetermined","error":str(error),
-                "next":"If scripts are blocked, inspect Get-ExecutionPolicy -List and the downloaded file's trust status. "
+                "next":"First check execution_context.windows_environment and the failing process/exit code. "
+                       "If scripts are blocked, inspect Get-ExecutionPolicy -List and the downloaded file's trust status. "
                        "Ask the user/admin; do not automatically change policy, unblock files, or bypass it. "
                        "COM registration and PNG/PDF export are separate checks."}
     if renderer not in ("none","libreoffice","powerpoint"):
         raise SpecError("Unknown renderer")
     requirements=["python","node","engine"]+(["soffice","pdftoppm"] if renderer=="libreoffice" else ["powerpoint"] if renderer=="powerpoint" else [])
-    result["renderer"]={"selected":renderer,"ready":all(result[k]["ready"] for k in requirements)}
+    result["renderer"]={"selected":renderer,"ready":all(result[k]["ready"] for k in requirements)
+                        and result["execution_context"]["windows_environment"]["ready"]}
     return result
 
 if __name__=="__main__":

@@ -121,6 +121,7 @@ class PortableTests(unittest.TestCase):
                 self.assertIsNone(z.testzip())
                 z.extractall(folder)
             root = Path(folder) / 'decksmith-portable'
+            self.assertTrue((root / 'skills/decksmith/scripts/process_environment.py').is_file())
             for path in ('runtime/python/python.exe', 'runtime/node/node.exe'):
                 self.assertEqual((root / path).read_bytes()[:2], b'MZ')
             pth = (root / 'runtime/python/python313._pth').read_text()

@@ -349,6 +349,16 @@ AIは使用バージョン、通信方針、画像生成の利用可否を最初
 
 診断結果をチャットへ貼り、「不足と対処を説明し、追加インストール前に確認して」と依頼できます。PORTABLE版の詳細診断は[PORTABLE_GUIDE](PORTABLE_GUIDE.md)を参照してください。
 
+### WindowsでNode.js・PowerShellの起動に失敗する場合
+
+AIの実行環境で子プロセスへ渡す変数が制限され、Windowsの場所を示すSystemRootやWINDIRが欠けている場合があります。通常版・PORTABLE版とも、不足または空の場合だけWindows APIからOSの場所を取得し、DeckSmithが起動する子プロセスに補います。OSの場所を固定せず、親プロセスやCodex等の全体設定も変更しません。
+
+doctorのexecution_context.windows_environmentと、起動時の「Windows child environment」を確認してください。補完した変数名・取得元を表示します。既存値がOSの情報と矛盾する場合や取得できない場合は停止し、自動で上書きしません。PROCESS_START_FAILEDはプロセスの起動失敗、PROCESS_EXIT_FAILEDは起動後の異常終了で、後者には終了コードも表示します。これだけで実行ポリシー違反やPowerPointの不具合と断定しないでください。
+
+組織の方針で補完を禁止する場合、管理者がDeckSmithに渡す環境変数に `DECKSMITH_WINDOWS_ENV_REPAIR=0` を指定できます（既定は補完有効）。不足時は停止します。環境変数が除外された理由は自動判定できないため、明示的な禁止がある場合は事前に管理者へ確認してください。APIキー等の復元、権限昇格、サンドボックスや実行ポリシーの変更は行いません。
+
+DeckSmithに到達する前に、AI側のシェルや同梱Python自体が起動できない場合は、この補完では直せません。AI実行環境の管理者へ確認してください。
+
 ### 3.2. MacでLibreOfficeが見つからない
 
 通常版では、アプリが入っていてもPATHから見つからない場合があります。まず実在を確認します。

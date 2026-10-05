@@ -12,6 +12,7 @@ from compile_spec import SpecError, compile_scene, source_hash
 from validate_pptx import validate_pptx
 from project_config import resolve_config
 from version import read_version
+from process_environment import child_environment, announce_repair, powershell_path
 from design_quality import check_plan, inspect_design
 from workflow import announce, check_content, policy_record
 
@@ -27,15 +28,28 @@ def next_output_path(output):
 
 def executable(name, env):
     value=os.environ.get(env) or shutil.which(name)
+    if not value and name == 'powershell.exe' and sys.platform == 'win32':
+        child_env, report = child_environment()
+        value = powershell_path(child_env)
     if not value: raise SpecError(f"Missing {name}; install it or set {env}")
     found=shutil.which(value)
     if not found: raise SpecError(f"Executable not found: {value}")
     return found
 
 def run(command, timeout=180, env=None):
-    result=subprocess.run(command,capture_output=True,text=True,encoding='utf-8',errors='replace',timeout=timeout,env=env)
+    try:
+        child_env, report = child_environment(env)
+    except ValueError as error:
+        raise SpecError(str(error)) from error
+    announce_repair(report)
+    try:
+        result=subprocess.run(command,capture_output=True,text=True,encoding='utf-8',errors='replace',timeout=timeout,env=child_env)
+    except OSError as error:
+        raise SpecError(f"PROCESS_START_FAILED: {command[0]}: {error}") from error
     if result.returncode:
-        raise SpecError(result.stderr.strip() or result.stdout.strip() or f"Command failed: {command[0]}")
+        detail = result.stderr.strip() or result.stdout.strip()
+        raise SpecError(f"PROCESS_EXIT_FAILED: {command[0]} (exit={result.returncode}, "
+                        f"hex=0x{result.returncode & 0xffffffff:08X}): {detail}")
     return result.stdout
 
 def renderer_runtime(renderer):

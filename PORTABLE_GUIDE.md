@@ -103,6 +103,8 @@ Copilotも上記のSKILL.mdを直接指定し、共通のdecksmith.cmdを使い�
 
 ## 5. 診断・再生成コマンド
 
+WindowsのSystemRoot・WINDIRが不足または空の場合は、Windows APIで確認した値を子プロセスにだけ補完します。取得失敗・既存値との矛盾はエラーで停止します。起動時の補完メッセージとdoctorのexecution_context.windows_environmentを確認してください。環境変数 `DECKSMITH_WINDOWS_ENV_REPAIR=0` で補完を禁止できます。この指定はPORTABLE版でも保持します。Codex等の全体設定や実行ポリシーは変更しません。DeckSmithより前にシェル・Python自体が起動できない場合は管理者へ確認してください。
+
 通常はAIが実行します。`<folder>` には `C:\work\my-presentations\setting` を指定します。コマンドの相対パスは--project基準、設定内の相対パスはdecksmith.yaml基準です。既定の出力先は `../output` です。
 
 | 操作 | 用途 |

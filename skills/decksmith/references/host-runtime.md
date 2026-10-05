@@ -1,5 +1,7 @@
 # 配布先の実行環境
 
+Windowsでは共有process_environment.pyがSystemRoot/WINDIRの不足をWindows APIから子プロセス限定で補完する。doctorのexecution_context.windows_environmentとランチャーの補完通知を確認する。API取得失敗・既存値との矛盾は停止する。明示的な補完禁止がある場合は実行前に管理者へ確認し、DECKSMITH_WINDOWS_ENV_REPAIR=0を渡す。禁止を解除・迂回したりCodex等の全体設定を書き換えたりしない。親シェルやPython自体の起動前の失敗はこの補完の対象外。PROCESS_START_FAILED/PROCESS_EXIT_FAILEDの段階と終了コードで切り分け、PowerPointや実行ポリシーの問題と即断しない。
+
 共有エンジンはPython 3.9+とNode.js 18+、PptxGenJS 4.0.1を使う。特定AIのSDKや非公開ライブラリを要求しない。標準プレビューにはLibreOfficeとPopplerのpdftoppmが必要。
 
 1. scripts/doctor.py --config <project>/decksmith.yamlで選択方式の利用可能性を調べる。設定ファイルがなければ--rendererで明示する。引数なしはカレントフォルダーのdecksmith.yamlまたは既定方式を使う。fontsとimage_generationは別途確認。
