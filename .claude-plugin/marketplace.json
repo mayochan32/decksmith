@@ -1,0 +1,14 @@
+{
+  "name": "decksmith-local",
+  "owner": {
+    "name": "mayo"
+  },
+  "plugins": [
+    {
+      "name": "decksmith",
+      "source": "./",
+      "version": "0.9.0",
+      "description": "題材・構成・スタイルを個別に指定し、編集可能なPowerPointを生成します。"
+    }
+  ]
+}

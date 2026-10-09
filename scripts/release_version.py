@@ -6,7 +6,7 @@ import re
 
 ROOT = Path(__file__).resolve().parents[1]
 VERSION_FILE = Path("skills/decksmith/VERSION")
-METADATA = (".codex-plugin/plugin.json", ".claude-plugin/plugin.json", "gemini-extension.json",
+METADATA = ("plugin.json", ".codex-plugin/plugin.json", ".claude-plugin/plugin.json", "gemini-extension.json",
             "skills/decksmith/package.json", "skills/decksmith/package-lock.json")
 
 
@@ -26,6 +26,9 @@ def check(root=ROOT):
             raise ValueError("Version mismatch: " + name)
         if name.endswith("package-lock.json") and data["packages"][""]["version"] != value[1:]:
             raise ValueError("Lockfile root version mismatch")
+    catalog = root / '.claude-plugin/marketplace.json'
+    if catalog.is_file() and json.loads(catalog.read_text())['plugins'][0]['version'] != value[1:]:
+        raise ValueError('Version mismatch: .claude-plugin/marketplace.json')
     return value
 
 
@@ -39,6 +42,11 @@ def set_version(value, root=ROOT):
         if name.endswith("package-lock.json"):
             data["packages"][""]["version"]=value[1:]
         updates[name]=json.dumps(data,ensure_ascii=False,indent=2)+"\n"
+    catalog = root / '.claude-plugin/marketplace.json'
+    if catalog.is_file():
+        data = json.loads(catalog.read_text())
+        data['plugins'][0]['version'] = value[1:]
+        updates['.claude-plugin/marketplace.json'] = json.dumps(data, ensure_ascii=False, indent=2) + '\n'
     for name, content in updates.items():
         (root/name).write_text(content,encoding="utf-8")
     (root/VERSION_FILE).write_text(value+"\n",encoding="utf-8")

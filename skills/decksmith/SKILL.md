@@ -9,6 +9,10 @@ description: 題材・構成・任意のスタイルYAMLから、AIがページ�
 
 ## 実行環境
 
+明示的な利用者の指示と、このセッションで既に得た承認を優先する。下記の確認は不足する指定や未承認の操作について行い、承認済みの同じ操作を再確認しない。
+
+ブラウザー版Claude／ChatGPTで試験利用する場合は、先に[ブラウザー試験](references/browser-trial.md)を読む。ローカルの通常版・PORTABLE版が主対応であり、ブラウザーの生成・プレビュー完了は環境ごとに未検証。登録できたことを実行成功と扱わない。クラウドMCPや別エンジンへの自動切り替えはしない。
+
 同梱版のルートにPORTABLE_GUIDE.mdとdecksmith.cmdがある場合は、そのガイドを先に読む。正式なWindows PORTABLE版ではPython・Node.jsのインストールや直接起動を行わず、`decksmith.cmd --version`、`decksmith.cmd doctor --project <project>`、`decksmith.cmd build --project <project>`を使う。以下の直接Python実行例よりこの起動方法を優先する。描画方式はnoneまたはpowerpointを明示し、無断でnoneへ変更しない。
 
 実行するSkillのscripts/version.pyまたはdoctor.pyから実際のバージョンを取得し、制作開始時に「DeckSmith vX.Y.Zで作成します」と利用者へ表示する。チャット履歴の版番号を使わない。

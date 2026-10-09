@@ -11,7 +11,7 @@ Windowsでは共有process_environment.pyがSystemRoot/WINDIRの不足をWindows
 5. ホストに優先利用すべき依存ランタイムや操作記録の指示がある場合はその指示に従い、実行前に適用する。共有スクリプトからホスト専用処理は呼び出さない。
 6. フォントは埋め込まれない。指定フォントの有無を確認し、代替が必要なら役割を保って記録する。LibreOfficeプレビューとPowerPoint本体の描画には差があり得る。
 
-Codexは.codex-plugin/plugin.json、Claude Codeは.claude-plugin/plugin.json、Gemini CLIはgemini-extension.jsonを入口にする。GitHub CopilotはVS CodeのAgentモードを対象とし、setup_workspace.py --host copilotで.github/skills/decksmithへ共通Skill全体を配置する。候補に出ない場合はSKILL.mdを直接指定する。既存の.agents/.claude配置も認識されるため同名Skillの重複登録を避ける。根拠: https://code.visualstudio.com/docs/agent-customization/agent-skills 。PORTABLE版では配置コピーせず展開先のSKILL.mdとdecksmith.cmdを直接指定する。共通のskills/decksmithを使用する。Gemini CLIはターミナル実行を想定し、導入・制作の一連の動作は未検証。Gemini Code Assist用ではない。ブラウザー版のChatGPT・Claude・Geminiへの直接導入は対象外。
+通常版はルートplugin.jsonと.agents/plugins/marketplace.jsonでCodex／ChatGPTデスクトップのローカルプラグインとして登録できる。.codex-plugin/plugin.jsonも互換用に維持する。Claude Codeは.claude-plugin/plugin.jsonと.claude-plugin/marketplace.jsonを入口にする。プラグインとして導入した場合は同じSkillを作業フォルダーにも重複登録しない。Gemini CLIはgemini-extension.jsonを入口にする。GitHub CopilotはVS CodeのAgentモードを対象とし、setup_workspace.py --host copilotで.github/skills/decksmithへ共通Skill全体を配置する。候補に出ない場合はSKILL.mdを直接指定する。既存の.agents/.claude配置も認識されるため同名Skillの重複登録を避ける。根拠: https://code.visualstudio.com/docs/agent-customization/agent-skills 。PORTABLE版では配置コピーせず展開先のSKILL.mdとdecksmith.cmdを直接指定する。Gemini CLIの実利用は未検証。ブラウザー版Geminiは対象外。ブラウザー版Claude／ChatGPTは[ブラウザー試験](browser-trial.md)に従う任意の試験対象で、正式対応ではない。
 
 画像生成は[画像素材の接続契約](image-assets.md)を読む。ホストに画像生成機能があると決めつけず、提供画像・生成機能・利用者が設定した外部サービスを区別する。
 

@@ -1,0 +1,37 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "decksmith",
+  "version": "0.9.0",
+  "description": "題材・構成・スタイルを個別に指定し、編集可能なPowerPointを生成します。",
+  "author": {
+    "name": "mayo"
+  },
+  "license": "MIT",
+  "keywords": [
+    "powerpoint",
+    "presentation",
+    "slides",
+    "image-generation",
+    "style"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "DeckSmith",
+        "shortDescription": "好みの構成とスタイルでPowerPointを生成",
+        "longDescription": "題材、構成、スタイルを個別に指定し、参考画像から抽出したデザインルールと画像生成を組み合わせて、編集可能なPowerPointを作成します。",
+        "developerName": "mayo",
+        "category": "Productivity",
+        "capabilities": [
+          "Write"
+        ],
+        "defaultPrompt": [
+          "題材・構成・スタイルを指定してPowerPointを作成",
+          "参考画像の雰囲気を分析してスライドを作成",
+          "既存の構成案から見栄えの良いPPTXを生成"
+        ],
+        "brandColor": "#315CFF"
+      }
+    }
+  }
+}

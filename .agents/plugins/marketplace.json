@@ -1,0 +1,20 @@
+{
+  "name": "decksmith-local",
+  "interface": {
+    "displayName": "DeckSmith Local"
+  },
+  "plugins": [
+    {
+      "name": "decksmith",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

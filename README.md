@@ -11,7 +11,7 @@ DeckSmithは、スタイルYAMLをAIが解釈して、内容に合わせた編�
 
 配布ZIPは次の2種類です。AIツール別にダウンロードし直す必要はありません。
 
-- `decksmith-vX.Y.Z.zip`：通常版。Codex・Claude Code・GitHub Copilot・Gemini CLI用の共通Skill、登録情報、導入処理を同梱。実行環境は別途準備します。
+- `decksmith-vX.Y.Z.zip`：通常版。Codex・Claude Code・GitHub Copilot・Gemini CLI用の共通Skill、登録情報、ローカルプラグインのカタログ、導入処理を同梱。実行環境は別途準備します。
 - `decksmith-vX.Y.Z-portable-win-x64.zip`：Windows用PORTABLE版。共通SkillとPython・Node.js等を同梱します。
 
 通常版には各ツールの登録情報が共存しますが、利用しないAIツールのインストールや契約は不要です。Gemini CLIでの実利用は未検証です。
@@ -21,6 +21,53 @@ DeckSmithは、スタイルYAMLをAIが解釈して、内容に合わせた編�
 - 手順全体：[利用ガイド](USER_GUIDE.md)
 - Windowsで環境準備を減らしたい方：[PORTABLE版ガイド](PORTABLE_GUIDE.md)
 - 入手先：[GitHub Releases](https://github.com/mayochan32/decksmith/releases)（各リリースに実際に添付された配布物を確認してください）
+
+ローカル実行が主対応で、常駐サーバー・MCP・追加のLLM APIキーは不要です。ブラウザー対応は任意の試験として扱い、実行環境が使えない場合はローカル版を利用します。
+
+## 使い方を選ぶ
+
+### 利用する環境と導入方法
+
+| 使い方 | 向いている場合 | 導入・呼び出し |
+| --- | --- | --- |
+| 作業フォルダーにスキルを登録 | Codex・Claude Code・GitHub Copilotから、そのフォルダーで繰り返し使いたい | 通常版の登録処理を使う。Codexは `$decksmith`、Claude Codeは `/decksmith`。詳しくは[利用ガイド1.3](USER_GUIDE.md#13-通常版の準備とスキル登録) |
+| ローカルプラグインとして導入 | Codex／ChatGPTデスクトップ・Claude Codeでプラグインとして管理したい | 通常版のローカルカタログを登録する。Claude Codeは `/decksmith:decksmith`。詳しくは[利用ガイド1.4](USER_GUIDE.md#14-ローカルプラグインとして導入する) |
+| Windows PORTABLE版を直接指定 | Windows x64でPython・Node.js等の個別準備を減らしたい | ZIPを丸ごと展開し、同梱のSKILL.md・ガイド・decksmith.cmdを指定する。[PORTABLE版ガイド](PORTABLE_GUIDE.md) |
+| 通常版のSKILL.mdを直接指定 | スキル登録やプラグイン導入をせずに試したい | 通常版を展開し、SKILL.mdの実際のパスをAIへ伝える。[利用ガイド1.5](USER_GUIDE.md#15-通常版のskillmdを直接指定する) |
+| ブラウザー版Claude／ChatGPTで試す | ブラウザーだけで実行できるか検証したい | 実験用ZIPと[ブラウザー試験ガイド](BROWSER_TRIAL.md)を使う。正式対応には含めない |
+
+通常版はどの呼び出し方でも実行環境の準備が必要です。PORTABLE版はフォルダー全体を保ち、スキル部分だけをコピーしないでください。同じスキルを作業フォルダーとプラグインに重複登録する必要はありません。
+
+ローカルプラグインは登録情報と配布物を検査済みですが、各クライアントの実画面での導入確認は未実施です。ブラウザー版の生成・プレビューまでの実行と、Gemini CLIでの実利用も未検証です。
+
+### 依頼内容の渡し方
+
+| 依頼 | 渡すもの・伝えること |
+| --- | --- |
+| ファイルにまとめた内容から作る | `brief.md`、`style.yaml`、必要なら `decksmith.yaml` |
+| チャットに書いた内容から作る | 題材・対象読者・目的・必須内容をチャットで伝え、スタイルと生成条件を指定 |
+| 参考資料をもとに作る | PDF・原稿・画像を渡し、内容の根拠にする資料と見た目だけの参考を区別 |
+| 同じ内容でデザインを変える | 元の原稿・内容を保持し、別の `style.yaml` で別名の資料を生成 |
+| 生成した資料を修正する | 同じチャットで対象ページと変更点を指定し、元の出力を残して再生成 |
+
+例えば、スキル登録したCodexでは次のように依頼します。他の導入方法では、先頭を利用ガイドの呼び出し例に置き換えます。
+
+```text
+$decksmith
+setting/brief.mdの内容を、setting/style.yamlのデザインでPowerPointにしてください。
+生成条件はsetting/decksmith.yamlに従い、output/へ保存してください。
+本文・数値・基本図形は編集可能にし、全ページのプレビューを確認してください。
+```
+
+### 出力と画像の選び方
+
+| 出力 | 条件・確認状態 |
+| --- | --- |
+| PPTX＋プレビュー | LibreOffice＋Poppler、またはWindowsのPowerPointを使用。全ページを確認する |
+| PPTX＋プレビュー＋PDF | 上記に加え、`output.pdf: true` を指定 |
+| PPTXのみ | `output.renderer: none` と `output.pdf: false` を指定。見た目未確認として納品 |
+
+画像は、提供画像のみを使う、利用環境の画像生成も使う、画像なしで構成する方法を選べます。画像生成機能の有無はAI環境によって異なります。具体的な依頼例と設定は[利用ガイド2章](USER_GUIDE.md#2-プレゼン資料生成方法)を参照してください。
 
 ## Windows PORTABLE版 — ZIPを展開して使える正式な配布方式
 
@@ -64,7 +111,7 @@ Macや自分のPython／Node.jsを使う環境には、通常版を用意して�
 
 ## 利用環境と対応範囲
 
-Codex、Claude Code、GitHub Copilot（VS CodeのAgentモード）、Gemini CLI向けに共通のSkillと描画エンジンを用意しています。Copilotは `.github/skills/decksmith/` へ登録します。Gemini CLIはターミナルでの実行を想定し、実利用は未検証のまま提供対象に残しています。DeckSmith自体は独立したVS Code拡張ではなく、ブラウザー版チャットへの直接導入も対象外です。AIや画像生成機能が異なれば、同じ指定でも結果は異なります。
+導入方法と検証状況は「使い方を選ぶ」を参照してください。DeckSmith自体は独立したVS Code拡張ではありません。AIや画像生成機能が異なれば、同じ指定でも結果は異なります。
 
 通常版はPython 3.9+、Node.js 18+と描画ライブラリを用意します。プレビューはLibreOffice＋Poppler、またはWindowsのPowerPointを使用。PPTXのみなら変換ソフトは不要です。YAMLライブラリは同梱しています。
 

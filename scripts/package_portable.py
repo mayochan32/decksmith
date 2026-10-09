@@ -38,7 +38,7 @@ def package(inputs, output, npm, cache=None):
         shutil.copy2(root / 'skills/decksmith/assets/decksmith.yaml', stage / 'templates/decksmith.yaml')
         for name in ('decksmith.cmd', 'launcher.py', 'runtime-lock.json'):
             shutil.copy2(runtime_source / name, stage / name)
-        for name in ('VERSION', 'LICENSE', 'README.md', 'USER_GUIDE.md', 'PORTABLE_GUIDE.md'):
+        for name in ('VERSION', 'LICENSE', 'README.md', 'USER_GUIDE.md', 'PORTABLE_GUIDE.md', 'BROWSER_TRIAL.md'):
             shutil.copy2(root / name, stage / name)
         skill = stage / 'skills/decksmith'
         shutil.copytree(root / 'skills/decksmith', skill,

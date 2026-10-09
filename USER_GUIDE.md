@@ -25,7 +25,17 @@ Codex・Claude Code・GitHub Copilot・Gemini CLIごとのZIPは選びません�
 | Windows PORTABLE版（正式な配布方式） | Windows x64 | ZIPを丸ごと展開。Python・Node.js・npmの個別導入は不要 |
 | 通常版 | Windows／Mac | Python 3.9+、Node.js 18+、npmと描画ライブラリを用意 |
 
-どちらもAIエージェントと利用契約・認証、必要なフォントを別途用意します。ここではVS CodeのCodex／Claude Code／GitHub Copilot（Agentモード）から使う手順を示します。DeckSmith自体はVS Code拡張ではなく、AIが読むSkillとローカルの描画処理です。
+どちらもAIエージェントと利用契約・認証、必要なフォントを別途用意します。DeckSmithはAIが読むSkillとローカルの描画処理です。Codex・Claude Codeでは利用するクライアントに合わせて導入し、GitHub CopilotではVS CodeのAgentモードを使います。
+
+通常版は、配布物とは別に次の呼び出し方を選べます。
+
+| 呼び出し方 | 手順 | 作業フォルダーへのSkill配置 |
+| --- | --- | --- |
+| スキル登録 | 1.3。Codex・Claude Code・GitHub Copilot向け | 必要 |
+| ローカルプラグイン | 1.3の共通準備と1.4。Codex／ChatGPTデスクトップ・Claude Code向け | 不要 |
+| SKILL.mdの直接指定 | 1.3の共通準備と1.5。ファイル参照とローカル実行ができるAI向け | 不要 |
+
+PORTABLE版は1.2の直接指定を使います。ブラウザー版Claude／ChatGPTは任意の試験対象で、ローカルの導入手順とは分けます。[ブラウザー試験ガイド](BROWSER_TRIAL.md)を参照してください。ブラウザーでの生成・プレビューの実行は未検証です。
 
 ### 1.2. Windows PORTABLE版を導入する
 
@@ -45,13 +55,21 @@ PowerPointを使わずPPTXのみ作る場合は、最後を `--renderer none` �
 
 PORTABLE版ではSkillだけを `.agents` や `.claude` へコピーせず、展開先のSkillと `decksmith.cmd` をAIに直接指定します。実行環境との位置関係を保つためです。詳細は[PORTABLE_GUIDE](PORTABLE_GUIDE.md)を参照してください。
 
-### 1.3. 通常版を導入する
+### 1.3. 通常版の準備とスキル登録
 
 PORTABLE版を使う方は、この項目を飛ばしてください。
+
+#### 共通の動作環境を準備する
 
 Python 3.9以上、Node.js 18以上とnpmを用意します。プレビュー方式に応じてLibreOffice＋Poppler、またはWindowsのデスクトップ版PowerPointも必要です。PPTXだけなら変換ソフトは不要です。YAMLライブラリは同梱されているため `pip install` は不要です。
 
 導入元：[Python](https://www.python.org/downloads/)、[Node.js](https://nodejs.org/en/download)、[LibreOffice](https://www.libreoffice.org/download/)、[Poppler](https://poppler.freedesktop.org/)。
+
+WSL・SSH・Dev Containerでは、AIが実行する側に依存ソフトが必要です。PowerPoint連携はWindowsネイティブ環境のみで、Mac・WSL・サービスからの操作には対応しません。
+
+プラグイン利用は1.4、SKILL.mdの直接指定は1.5へ進んでください。以下は作業フォルダーへスキル登録する場合だけの手順です。
+
+#### 作業フォルダーへスキルを登録する
 
 展開した通常版のDeckSmithフォルダーで、Skillを作業フォルダーへ登録します。
 
@@ -98,15 +116,54 @@ python3 .github/skills/decksmith/scripts/doctor.py
 
 doctorは既定でLibreOffice方式を確認します。設定前に別方式を検査するなら `--renderer powerpoint` または `--renderer none` を付けます。設定を用意した後は `--config setting/decksmith.yaml` で選択方式を確認できます。
 
-WSL・SSH・Dev Containerでは、AIが実行する側に依存ソフトが必要です。PowerPoint連携はWindowsネイティブ環境のみで、Mac・WSL・サービスからの操作には対応しません。
+### 1.4. ローカルプラグインとして導入する
+
+通常版は作業フォルダーへのSkill登録に加え、プラグインとしても導入できます。どちらか一方を選び、同じSkillを重複登録しないでください。サーバー・MCP・追加のLLM APIキーは不要です。利用するAIサービスの契約・認証は必要です。
+
+登録情報と配布物は検査済みですが、Claude Code／Codex／ChatGPTデスクトップの実画面からのプラグイン導入確認は未実施です。以下は導入手順の案内で、クライアントごとの動作確認完了を意味しません。
+
+**Codex／ChatGPTデスクトップ**では、通常版の展開先をローカルmarketplaceとして追加します。
+
+```bash
+codex plugin marketplace add "/path/to/decksmith"
+```
+
+デスクトップアプリを再起動し、Pluginsで「DeckSmith Local」を選んでDeckSmithをインストールします。表示やCLIの対応は利用中の版によるため、使えない場合は1.3のSkill登録方法を使ってください。Web版へこのローカル登録が同期すると仮定しないでください。[OpenAIの公式手順](https://developers.openai.com/plugins/build/plugins)。
+
+**Claude Code**では次を実行します。
+
+```text
+/plugin marketplace add /path/to/decksmith
+/plugin install decksmith@decksmith-local
+```
+
+導入後の呼び出しは `/decksmith:decksmith`。Skill単独登録の場合の `/decksmith` と異なります。インストールせず一時利用する場合は `claude --plugin-dir /path/to/decksmith` でも読み込めます。[Claude Codeの公式手順](https://code.claude.com/docs/en/plugins)。
+
+プラグインとして登録しても生成ランタイムは別途必要です。AIに「DeckSmithを使い、まず実行環境を診断してください」と依頼してください。インストール済みキャッシュが読み取り専用なら、依存ライブラリだけを作業先へ用意できます。AI向けの手順は[実行環境](skills/decksmith/references/host-runtime.md)にあります。
+
+ブラウザー版Claude／ChatGPTは[ブラウザー試験](BROWSER_TRIAL.md)を参照してください。ローカルプラグインの登録完了と、ブラウザー版での実行成功は別です。
+
+### 1.5. 通常版のSKILL.mdを直接指定する
+
+通常版を、例えば `/path/to/decksmith` に展開し、フォルダー全体を保ちます。作業フォルダーへのスキル登録やプラグイン導入は不要ですが、1.3の共通の動作環境は必要です。
+
+展開先で描画ライブラリを準備し、診断します。
+
+```bash
+npm ci --prefix "/path/to/decksmith/skills/decksmith" --ignore-scripts --no-audit --no-fund
+python3 "/path/to/decksmith/skills/decksmith/scripts/doctor.py" --renderer libreoffice
+```
+
+WindowsのPowerPoint方式は `--renderer powerpoint`、PPTXのみは `--renderer none` に変更します。WindowsではPythonの起動方法とパスも実環境に合わせてください。npmの初回取得にはネットワークを使うため、AIが行う場合は取得前に承認を確認します。
+
+依頼時は `/path/to/decksmith/skills/decksmith/SKILL.md` を読んで従うようAIへ伝え、作業先も指定します。SKILL.mdだけを別の場所へ移すと、同梱スクリプトや参照ファイルを使えません。実際の依頼例は2.4にあります。
 
 ## 2. プレゼン資料生成方法
 
-作業フォルダーの例です。PORTABLE版の実行ファイル一式は、この外に置いて構いません。
+どの呼び出し方でも、原稿・設定と出力の構成は共通です。プラグイン、通常版の直接指定、PORTABLE版の実行ファイル一式は、この外に置いて構いません。
 
 ```text
 my-presentations/
-  .agents/skills/decksmith/  ← 通常版Codex用。Claudeは .claude/skills/decksmith/、Copilotは .github/skills/decksmith/
   setting/
     decksmith.yaml          ← 任意。サイズ、言語、通信制限、入出力などの制作設定
     style.yaml              ← 配色、書体、構図などのデザイン指定
@@ -115,7 +172,9 @@ my-presentations/
   output/                   ← 生成結果（制作時に作成）
 ```
 
-通常版のSkillは `my-presentations/` 直下に登録し、`setting/` の中には置きません。PORTABLE版では上記のSkill配置は不要です。`scene.yaml`、`structure.yaml`、制作計画やレビュー記録はAIが作る内部ファイルで、利用者が用意する必要はありません。制作中の内部ファイルは `setting/` 側、納品PPTX・PDF・プレビューは `output/` 側に保存します。
+1.3のスキル登録を使う場合だけ、`my-presentations/` 直下に `.agents/skills/decksmith/`（Codex）、`.claude/skills/decksmith/`（Claude Code）、`.github/skills/decksmith/`（Copilot）を追加します。`setting/` の中には置きません。プラグイン・直接指定・PORTABLE版ではこの配置は不要です。
+
+`scene.yaml`、`structure.yaml`、制作計画やレビュー記録はAIが作る内部ファイルで、利用者が用意する必要はありません。制作中の内部ファイルは `setting/` 側、納品PPTX・PDF・プレビューは `output/` 側に保存します。
 
 ### 2.1. プレゼン内容を用意する（brief.md）
 
@@ -177,6 +236,8 @@ PPTXのみなら `--renderer none`。通常版のCodex配置なら、my-presenta
 ```bash
 python3 .agents/skills/decksmith/scripts/project_init.py --project setting
 ```
+
+プラグイン利用時は、AIに「DeckSmithの設定雛形を作業フォルダーのsetting/decksmith.yamlへ作り、使う描画方式を設定してください」と依頼します。通常版を直接指定している場合は、展開先の `skills/decksmith/scripts/project_init.py` を実行するか、同じ依頼をします。実行先と描画方式を明示してください。
 
 既存設定は上書きしません。`input.style`、`input.brief`、`output.filename`、`language` の `null` は未指定という意味です。雛形を直接コピーした場合、rendererは `libreoffice` なので、PORTABLE版では必ず `powerpoint` または `none` に変更してください。
 
@@ -273,7 +334,33 @@ PowerPoint連携では、初期設定・認証を済ませ、開いている資�
 
 ### 2.4. プレゼン資料生成を指示する
 
-VS Codeで `my-presentations/` を開き、AIエージェントへ依頼します。以下の通常版の依頼例は、この作業フォルダーを基準に指定しています。設定内の相対パスは引き続き `setting/decksmith.yaml` 基準です。
+利用するAIで `my-presentations/` を作業先に指定します。VS Codeを使う場合はそのフォルダーを開きます。ローカルファイルを参照できるクライアントで依頼してください。以下の通常版の依頼例は、この作業フォルダーを基準に指定しています。設定内の相対パスは引き続き `setting/decksmith.yaml` 基準です。
+
+#### 導入方法に合わせて呼び出す
+
+| 導入方法 | 依頼の先頭・操作 |
+| --- | --- |
+| Codexへスキル登録 | `$decksmith` |
+| Claude Codeへスキル登録 | `/decksmith` |
+| GitHub Copilotへスキル登録 | Agentモードで `/decksmith`、または `.github/skills/decksmith/SKILL.md` を読むよう指定 |
+| Claude Codeへプラグイン導入 | `/decksmith:decksmith` |
+| Codex／ChatGPTデスクトップへプラグイン導入 | 導入したDeckSmithプラグインを有効にし、「DeckSmithを使って」と指定。選択・呼び出し表示はクライアントに従う |
+| 通常版を直接指定 | 展開先の `skills/decksmith/SKILL.md` の実際のパスを指定 |
+| Windows PORTABLE版 | 下記のように展開先のSKILL.md・ガイド・decksmith.cmdを指定 |
+
+以下の通常版の例はスキル登録したCodex向けです。他の導入方法では、先頭をこの表の指定へ置き換え、本文の制作指示は共通で使えます。
+
+#### 通常版の直接指定の依頼例
+
+```text
+/path/to/decksmith/skills/decksmith/SKILL.mdを読んで、その手順に従ってください。
+作業先は/path/to/my-presentationsです。
+setting/brief.md、setting/style.yaml、setting/decksmith.yamlに従ってPowerPointを作成し、
+output/へ保存してください。本文・数値・基本図形は編集可能にし、
+指定された方式で全ページのプレビューを確認してください。
+```
+
+例のパスは実際の展開先と作業先に置き換えます。PPTXのみの設定では、プレビュー確認の指定を「見た目未確認として納品」に変えてください。
 
 #### PORTABLE版の依頼例
 
@@ -300,7 +387,7 @@ setting/brief.mdに記載した題材・対象読者・目的・必須内容に�
 不明点や矛盾は確認してください。
 ```
 
-Claude Codeでは先頭を `/decksmith` に置き換えます。CopilotではAgentモードにし、先頭を `/decksmith`、または「`.github/skills/decksmith/SKILL.md` を読んで、その手順に従ってください」に置き換えます。PPTXのみの設定なら「全ページのプレビューを確認」を「見た目未確認として納品」に変えてください。
+導入方法ごとの呼び出しは上の表を参照してください。PPTXのみの設定なら「全ページのプレビューを確認」を「見た目未確認として納品」に変えてください。
 
 #### 通常版：内容をプロンプトで伝える
 
@@ -314,6 +401,31 @@ output/へ保存してください。本文・数値は編集可能にしてく�
 ```
 
 brief.mdがない場合は `input.brief` をnullまたは省略にします。decksmith.yamlも省略する場合は、必要な条件と保存先をプロンプトで指定します。PORTABLE版では必ずPowerPoint方式かPPTXのみかを明示してください。
+
+#### 参考資料をもとに作る
+
+```text
+$decksmith
+setting/references/service.pdfを内容の根拠にして、初めてサービスを知るお客様向けに
+6ページのPowerPointを作ってください。数値・条件は推測で補わないでください。
+setting/references/design.pdfは見た目だけの参考にし、そこから本文や数値を転用しないでください。
+デザインはsetting/style.yaml、生成条件はsetting/decksmith.yamlに従い、output/へ保存してください。
+全ページのプレビューを確認してください。
+```
+
+利用環境がPDFを読めない場合は、原稿をテキスト等で渡す方法を確認します。
+
+#### 同じ内容でデザインを変える
+
+```text
+$decksmith
+先ほど作成した資料と同じ原稿・必須内容・数値を保持し、
+setting/style-alternative.yamlのデザインで再生成してください。
+生成条件はsetting/decksmith.yamlに従い、元の出力を残して別名で保存してください。
+全ページのプレビューを確認してください。
+```
+
+出力は、PPTX＋プレビュー、PDFも追加、PPTXのみから2.3のrendererとpdfで選べます。画像は提供画像のみなら `images.mode: provided_only`、生成機能も利用するなら `auto`、画像なしなら `images.amount: none` を指定します。生成機能の利用可否は環境ごとに確認します。
 
 #### 制作中と完成後
 
@@ -335,9 +447,12 @@ AIは使用バージョン、通信方針、画像生成の利用可否を最初
 
 | 症状 | 対処 |
 | --- | --- |
-| Skillが候補に出ない | 通常版は配置先・フォルダーの二重化を確認し、新規チャットや再読み込みを試す。PORTABLE版は候補への登録を前提にせず、展開先のSKILL.mdを直接指定する |
+| Skillが候補に出ない | スキル登録した場合は配置先・フォルダーの二重化を確認し、新規チャットや再読み込みを試す。直接指定・PORTABLE版は展開先のSKILL.mdを指定する |
+| プラグインが表示されない・呼び出せない | カタログの登録先、インストール・有効化、クライアントの対応版を確認する。Claude Codeのプラグインは `/decksmith:decksmith`。対応しない場合はスキル登録か直接指定を使う |
+| 同じSkillが複数表示される | 作業フォルダーの登録とプラグイン導入が重複していないか確認し、使う方式を一つにする。旧Skillのバックアップは探索対象の外へ置く |
+| ブラウザーで実行できない | 正式対応には含めない。[ブラウザー試験ガイド](BROWSER_TRIAL.md)で実行環境と停止条件を確認し、難しい場合はローカル版を使う |
 | PORTABLE版でbundled Pythonがない | ZIP全体を展開し直す。PC側のPythonへの切り替えでは解決しない |
-| 通常版でnode／engineが見つからない | Node.jsのPATHと、登録したSkill内のnpm ciを確認する |
+| 通常版でnode／engineが見つからない | Node.jsのPATHと、実行するSkill用の描画ライブラリを確認する。プラグイン登録だけでは実行環境は揃わない。読み取り専用キャッシュは1.4の実行環境の手順を参照 |
 | PowerPointが使えない | Windowsデスクトップ版の導入・認証を確認。doctorのCOM登録確認だけでは書き出し成功を保証しない |
 | PowerPointが起動中と表示 | 開いている資料を保存し、PowerPointを手動で終了する |
 | スクリプト実行が拒否される | 診断結果と実行環境を確認し、組織の管理者へ相談する。制限を自動解除・迂回しない |
@@ -369,7 +484,7 @@ export DECKSMITH_SOFFICE="/Applications/LibreOffice.app/Contents/MacOS/soffice"
 python3 .agents/skills/decksmith/scripts/doctor.py
 ```
 
-Claude Codeでは `.agents` を `.claude`、Copilotでは `.github` に読み替えてください。別の導入先なら実際のパスを指定します。
+この診断例はCodexへスキル登録した場合です。Claude Codeでは `.agents` を `.claude`、Copilotでは `.github` に読み替えます。直接指定は展開先のdoctor.pyを使い、プラグインではAIに診断を依頼します。別の導入先なら実際のパスを指定します。
 
 exportはそのターミナルと子プロセスだけに有効です。起動済みの拡張へ自動反映されるとは限りません。AIにも「診断と生成の各実行でDECKSMITH_SOFFICEにこのパスを指定して」と伝えてください。
 
@@ -398,10 +513,12 @@ exportはそのターミナルと子プロセスだけに有効です。起動�
 ```
 
 ```bash
-# 通常版（my-presentations内で実行）
+# 通常版をスキル登録した場合（my-presentations内で実行）
 python3 .agents/skills/decksmith/scripts/create_deck.py --version
 # Claude Code用は .agents を .claude、Copilot用は .github に変更
 ```
+
+通常版の直接指定では、展開先の `skills/decksmith/scripts/create_deck.py --version` を実行します。プラグインではAIに「実行するDeckSmithのバージョンを確認してください」と依頼します。配布元だけでなく、実際に読み込むSkillの版を確認してください。
 
 生成開始時と検証・レビュー記録にも版番号が残ります。スライド上には版番号を追加しません。
 
@@ -409,11 +526,19 @@ python3 .agents/skills/decksmith/scripts/create_deck.py --version
 
 PORTABLE版は新版ZIPを別フォルダーへ丸ごと展開し、AIへ指定するSKILL.md・ガイド・decksmith.cmdのパスを切り替えます。runtimeやSkillの一部だけを旧版と混在させないでください。`setting/` の原稿・設定・素材と、同列の `output/` の生成結果は保持します。
 
-通常版は既存Skillを探索対象の外へバックアップし、新版を配置してnpm ciを実行します。登録処理は同名のSkillを上書きしません。旧Skillを同じskillsフォルダーに別名で残すと、重複認識の原因になります。
+通常版は呼び出し方に合わせて更新します。
+
+| 呼び出し方 | 更新方法 |
+| --- | --- |
+| 作業フォルダーへスキル登録 | 既存Skillを探索対象の外へバックアップし、新版の登録処理で配置してnpm ciを実行する。登録処理は同名のSkillを上書きしない |
+| ローカルプラグイン | 新版を別フォルダーへ展開し、利用中のクライアントの操作でカタログの参照先を切り替え、プラグインを更新または再導入する。一時利用は `--plugin-dir` の参照先を変える。依存環境も再診断する |
+| SKILL.mdの直接指定 | 新版を別フォルダーへ展開し、1.5の依存準備・診断を行って、AIに伝えるSKILL.mdのパスを変更する |
+
+旧Skillを同じskillsフォルダーに別名で残すと、重複認識の原因になります。プラグインの更新・再導入操作はクライアントの対応版で確認し、更新後は4.1で実際に実行する版番号を確認してください。どの方式でも `setting/` と `output/` は保持します。
 
 ### 4.3. 別のPCへ配布する
 
-PORTABLE版は展開フォルダー全体を渡します。通常版は配布物のガイドと登録処理を使い、配布先で依存ソフトを用意します。どちらも開発チャットや開発者の絶対パスには依存しません。AI環境・フォント・PowerPoint等の利用条件は各PCで確認してください。
+PORTABLE版は展開フォルダー全体を渡します。通常版も登録情報とガイドを含む配布物全体を渡し、配布先で呼び出し方を選んで依存ソフトを用意します。どちらも開発チャットや開発者の絶対パスには依存しません。AI環境・フォント・PowerPoint等の利用条件は各PCで確認してください。
 
 正式仕様としてのPORTABLE版採用と、更新版ZIPの公開は別です。この文書は現在のソースを説明しています。公開済みZIPに含まれる機能は、そのリリースの説明とVERSIONを確認してください。
 

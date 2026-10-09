@@ -12,7 +12,7 @@ python3 scripts/release_version.py --check
 python3 scripts/release_version.py --set v0.4.1
 ```
 
-更新コマンドはSkill内とリポジトリ直下のVERSION、各ホストのmanifest、npmのpackage/lockを同期する。チェック時にはルートのVERSIONとの一致も検査する。JSONメタデータはvなし、利用者への表示はv付き。依存ライブラリの版は変更しない。Gitタグ・push・Release公開は自動では行わない。
+更新コマンドはSkill内とリポジトリ直下のVERSION、ルートplugin.json、各ホストのmanifestとClaude marketplace、npmのpackage/lockを同期する。チェック時にはルートのVERSIONとの一致も検査する。JSONメタデータはvなし、利用者への表示はv付き。依存ライブラリの版は変更しない。Gitタグ・push・Release公開は自動では行わない。
 
 ## 生成処理の直接実行
 
@@ -36,10 +36,12 @@ python3 skills/decksmith/scripts/create_deck.py \
 python3 -m unittest discover -s tests
 # 描画環境がある場合
 DECKSMITH_RENDER_TEST=1 python3 -m unittest discover -s tests
-python3 scripts/package_plugin.py --output dist/standard
+python3 scripts/package_plugin.py --output dist/standard --zip
+# 任意のブラウザー試験用。公開・アップロードは行わない
+python3 scripts/package_plugin.py --output dist/browser-trial --browser-trial
 ```
 
-通常版は全ホスト共通。package_plugin.pyの--hostは廃止し、Codex・Claude・Geminiの登録情報とCopilotを含む導入処理を一緒に配布する。既存の配布フォルダーは上書きしない。版番号の不一致はエラーにし、配布ルートにVERSIONを同梱する。開発サンプル・旧エンジン・node_modulesは配布対象外。依存はロックファイルから導入する。ZIP名はdecksmith-vX.Y.Z.zip。もう1つの配布物は[Windows PORTABLE版](portable-build.md)のdecksmith-vX.Y.Z-portable-win-x64.zipで、ホスト別ZIPは公開しない。
+通常版は全ホスト共通。package_plugin.pyの--hostは廃止し、Codex・Claude・Geminiの登録情報とCopilotを含む導入処理を一緒に配布する。既存の配布フォルダーは上書きしない。版番号の不一致はエラーにし、配布ルートにVERSIONを同梱する。開発サンプル・旧エンジン・node_modulesは配布対象外。依存はロックファイルから導入する。ZIP名はdecksmith-vX.Y.Z.zip。もう1つの配布物は[Windows PORTABLE版](portable-build.md)のdecksmith-vX.Y.Z-portable-win-x64.zipで、通常のローカル配布ではホスト別ZIPは公開しない。任意のブラウザー試験は、ClaudeスキルZIPとChatGPTプラグインZIPをexperimental名で別途生成する。[試験ガイド](../BROWSER_TRIAL.md)に従い、登録・実行・視覚確認を区別する。試験ZIPは正式対応や公開申請を意味しない。
 
 ## Windows PowerPointの受入確認
 
