@@ -54,12 +54,12 @@ def scenes():
             for i, value in enumerate(CAPS):
                 y = (452 if compact else 404)+i*98
                 box(f'cap-{i}', 80, y, 1440, 72, fill=BLUE, stroke='none', radius=12 if compact else 36)
-                label(f'cap-label-{i}', value, 120, y+7, 1360, 58, 36, '#FFFFFF', 'left')
+                label(f'cap-label-{i}', value, 120, y+7, 1360, 58, 36, '#FFFFFF', 'center')
             group('domain-labels', 'domain', 4, dict(font_size=dict(max_spread=0), shape_width=dict(max_spread=0),
                   padding_top=dict(max_spread=0), gap_x=dict(max_spread=0)), '四領域は同格。見出し位置・寸法・間隔を揃える。')
             group('common-bands', 'cap', 3, dict(font_size=dict(max_spread=0), shape_height=dict(max_spread=0),
                   font_height_ratio=dict(min=.45, max=.55), text_box_center_y=dict(min=.48, max=.52), gap_y=dict(max_spread=0)),
-                  '三つの共通基盤は同じ帯厚・文字階層とし、領域名を圧倒しない。')
+                  '三つの共通基盤は四領域全体にかかるため、帯のラベルを中央揃えにする。同じ帯厚・文字階層とし、領域名を圧倒しない。')
         else:
             compact = index == 3
             y, h = (354, 184) if compact else (328, 240)
