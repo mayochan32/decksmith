@@ -52,3 +52,8 @@ PPTX SHA-256：`fe6bf4865fba491a7ecf50c469f212fda8ed453c291a693082b40bea417fed6a
 変更は前半2ページの6ラベルのalignと設計理由のみ。新たに描画した前半2PNGを確認し、後半2PNGは前回とバイト一致。原ラベル・図形寸法・文字サイズ・重なりを保持した。今回は描画ロジックを変更していないため、自動テストの追加や全件再実行はせず、実際の出力差分と視覚レビューを確認する。
 
 修正版：`artifacts/layout-balance-centered-20261011/output/` の `comparison.html`、`layout-balance.pptx`、`layout-balance.pdf`。PPTX SHA-256：`157790a8370bedf940f612145eb61fc19be3dc8749c5402e7ee13d531b4a9100`。
+
+
+## 行間・接触・まとまりへの展開（2026-10-11）
+
+別の参照ページで、3行の主張、補助バッジ、下部の説明の関係を調整した。[再現手順と確認結果](../../benchmarks/text-cohesion-pilot/README.md)に記録。設計指針へ行間と群内・群間の距離を追加し、設計時と視覚確認時の両方から参照する。字面の自動検出ではなく、設計判断の改善と適用例の確認。
