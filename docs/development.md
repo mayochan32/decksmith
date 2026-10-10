@@ -30,6 +30,8 @@ python3 skills/decksmith/scripts/create_deck.py \
 
 成功終了は視覚品質の合格を意味しない。レビュー台帳は未確認状態で生成し、AIが全ページを確認して修正する。
 
+設計ガイド変更の効果は[デザイン品質の比較検証](research/design-evaluation.md)で確認する。[書籍から取り込む原則](research/book-design-principles.md)には出典、採否、生成・レビューへの対応を記録している。
+
 ## テストと配布
 
 ```bash
