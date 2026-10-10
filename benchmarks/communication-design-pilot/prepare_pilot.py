@@ -1,4 +1,4 @@
-"""Reproduce authored pilot inputs; not a layout selector or automatic reviewer."""
+"""Reproduce communication design pilot inputs; not a layout selector or reviewer."""
 import argparse
 import hashlib
 import json
