@@ -20,3 +20,12 @@ MacのHiragino Sans、LibreOffice、Popplerを使用。必要に応じてDECKSMI
 PPTX SHA-256：`20affbdffdf42b3711c67c46c5225b0a14224a3d9f0631e0d1cdbd085b8f77b8`。
 
 本体への反映は[設計指針](../../skills/decksmith/references/layout-balance.md)と、design-plan・quality-gatesからの参照。行間、情報群の内外の距離、字面とラベルの接触を視覚確認する。字面の自動計測・自動修正機能は追加していない。生成ロジックの変更はないためコードテストの追加・全件再実行は行わず、実生成・描画・視覚確認・レビュー整合性・Skill検証を実施した。
+
+
+## 主張の強調を保つ修正（2026-10-11）
+
+利用者から、整理によって主張の力強さを失ったとの指摘を受けた。見出しだけをHiragino Sansのbold指定からHiragino Sans W9の実ウェイトへ変更。fontとbold以外のscene要素、文字・位置・サイズは前版と一致。fc-matchのW9解決と、PDFのHiraginoSans-W9埋込みを確認し、PNGで字面・余白・主張と説明の強弱を視覚確認した。元フォントを特定したという意味ではない。
+
+更新した指針では、主張を先に特定し、必要な太さ・大きさ・対比を決めてから補助説明を整理する。整列や余白調整の過程で主張を弱めないこと、縮小表示でも主張が先に目に入るかを確認することをdesign-plan・layout-balance・quality-gatesへ反映。すべての見出しを一律に極太へ変える処理ではない。
+
+最新版：`artifacts/text-cohesion-strong-20261011/output/`。PPTXは編集先にHiragino Sans W9が必要で、別環境では代替書体による見え方の差を再確認する。見た目を保持するPDFも保存。PPTX SHA-256：`b09fbda4a2f0b8c8039124a1b48c560c89bff0874bd27fae29229253f736d722`。

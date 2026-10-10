@@ -19,8 +19,8 @@ COPY = {
     'next-label': 'NEXT STEP',
     'next': '単なるITベンダーではなく、次の10年のビジネスモデルを共に描くパートナーとして、まずはPoC・ディスカッションからスタートしましょう',
 }
-STYLE = {'色と書体': '淡いグレー背景、青い太字の主張。Hiragino Sansを使用する。',
-         '見出し': '大見出しは3行を一まとまりとし、行間より他ブロックとの余白を大きくする。',
+STYLE = {'色と書体': '淡いグレー背景。主張は青いHiragino Sans W9の極太、補助文はHiragino Sansを使用する。',
+         '見出し': '最も伝えたい3行の主張を極太の字面で強調する。一まとまりに見える行間を保ち、説明より先に目に入るか確認する。',
          '情報のまとまり': '見出し、パーパス、協業の説明と次の行動の3段。下部3項目の上端を揃える。'}
 
 
@@ -38,14 +38,14 @@ def scene():
         display={'model':'企業の成長（売上・効率）と\nESG/サステナビリティ\n（環境・社会性）の両立支援',
                  'ecosystem':'グローバルメガクラウドや\n先端スタートアップ、学術機関との\n連携プラットフォーム',
                  'next':'単なるITベンダーではなく、\n次の10年のビジネスモデルを\n共に描くパートナーとして、\nまずはPoC・ディスカッションから\nスタートしましょう'}.get(eid,COPY[eid])
-        es.append(dict(id=eid,type='text',text=display,x=x,y=y,width=w,height=h,font='Hiragino Sans',
+        es.append(dict(id=eid,type='text',text=display,x=x,y=y,width=w,height=h,font='Hiragino Sans W9' if role=='heading' else 'Hiragino Sans',
                        size=size,role=role,color=color,bold=bold,align=align,vertical=vertical,line_spacing=spacing))
     def rect(eid,x,y,w,h,fill='none',stroke=blue,radius=0):
         es.append(dict(id=eid,type='shape',geometry='roundRect' if radius else 'rect',x=x,y=y,width=w,height=h,
                        fill=fill,stroke=stroke,stroke_width=2 if stroke!='none' else 0,radius=radius))
     rect('edition-box',80,44,310,46,radius=23)
     text('edition',90,48,290,36,22,'label',bold=True,align='center',vertical='middle')
-    text('title',80,124,1440,280,88,'heading',bold=True,spacing=1.0)
+    text('title',80,124,1440,280,88,'heading',bold=False,spacing=1.0)
     rect('purpose-box',80,476,260,44,fill=blue,stroke='none',radius=22)
     text('purpose-label',88,480,244,36,22,'label',color='#FFFFFF',bold=True,align='center',vertical='middle')
     text('purpose',370,475,1150,44,28,'label',bold=True)
@@ -83,9 +83,9 @@ def main():
         requirements=[dict(source='/'+k,interpretation=v,status='implemented',targets=['partnership/'+eid for eid in targets])
           for (k,v),targets in zip(STYLE.items(),[['title','purpose','next'],['title'],['purpose-label','purpose','model-label','ecosystem-label','next-label']])],slides=[scene()]))
     save(s/'design-plan.yaml',dict(**hashes,signatures=[dict(source='/'+k,intent=v,visual_check=v+' 実際の字面と余白を確認。') for k,v in STYLE.items()],
-        font_evidence='MacのHiragino Sansを使用。元画像の正確なフォントは不明。再生成時に利用可能な書体とウェイトを確認する。',
-        typography={r:dict(font='Hiragino Sans',min_size=z,reason='見出し・ラベル・説明の階層を分ける') for r,z in [('heading',88),('label',22),('body',24)]},
-        representative_slides=['partnership'],slides=[dict(id='partnership',focal_element='title',focal_reason='長期の変革パートナーという主張',
+        font_evidence='Macのfc-matchでHiragino Sans W9がW9の実フォントに解決することを確認。主張に実在する極太ウェイトを指定し、説明にはHiragino Sansを使用。元画像の正確なフォントは不明。再生成時は実在とPDFの埋込書体を再確認する。',
+        typography={r:dict(font='Hiragino Sans W9' if r=='heading' else 'Hiragino Sans',min_size=z,reason='見出し・ラベル・説明の階層を分ける') for r,z in [('heading',88),('label',22),('body',24)]},
+        representative_slides=['partnership'],slides=[dict(id='partnership',focal_element='title',focal_reason='長期の変革パートナーという主張がこのページの最重要内容。W9の極太の字面で補助説明より先に読ませる。',
         composition='大見出し3行を一つの文字枠にする。主張→パーパス→協業と次の行動の順。各まとまりの外側に余白を取り、下部のラベルと本文の上端を揃える。',
         asset_decision='参照画像の文章を編集可能な文字と図形で再構成。画像は使わない。')]))
     print(root)
