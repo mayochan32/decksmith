@@ -38,7 +38,7 @@ description: 題材・構成・任意のスタイルYAMLから、AIがページ�
 1. 題材・構成・スタイルを依頼から読み取る。指定済みなら再質問せず進む。参考資料は実際に見て、内容の資料かデザインの資料かを区別する。
 2. 元のスタイルYAMLをstyle.yamlとして保持する。独自キーや日本語の記述を、既知のキー名へ書き換えて意味を失わせない。[解釈と設計](references/style-system.md)を読む。
 3. 内容をstructure.yamlへ整理する。各ページにid、purpose、required_text（必ず残す文字列）を記録する。根拠と出典も保持する。内容の短縮は設計前に行い、描画時に切り捨てない。[制作補助](references/workflow.md)のfreeze-contentで原稿由来の基準を保存してからsceneを設計する。修正後のsceneからrequired_textや基準を逆生成しない。変更が必要なら原文・変更後・理由・原稿上の根拠を別記し、最終レビューで意味と必須条件を照合する。
-4. 元YAMLの各末端値を要件台帳へ対応づけ、[デザイン方針](references/design-plan.md)に従ってdesign-plan.yamlを作る。スタイル固有の特徴、各ページの意味上の主役、文字の役割・書体・サイズ、素材の必要性を座標設計より先に決める。Typeは利用者の説明用の名前であり、描画エンジンの選択キーではない。作れない要件はblocked/asset_pendingとし、非該当に偽装しない。
+4. 元YAMLの各末端値を要件台帳へ対応づけ、[デザイン方針](references/design-plan.md)と[内容から図解と読み順を決める](references/communication-design.md)を読んでdesign-plan.yamlを作る。原稿中の要素と関係を確かめ、主張を何で見せるか、ページの骨格、読み順を決めてから文字と素材を配置する。主役を見出しに固定しない。複数ページは[構図の選択と資料全体の流れ](references/composition-design.md)に従い、配置を使い回す前に内容上の理由を確かめる。Typeは利用者の説明用の名前であり、描画エンジンの選択キーではない。作れない要件はblocked/asset_pendingとし、非該当に偽装しない。
 5. 必要な素材を資料内のassets/へ生成・保存する。被写体、配置先、文字安全域、透過、質感を具体的に指定する。事実を示す画像は提供資料を使う。写真や装飾の生成画像に本文や数値を焼き込まない。
 6. [シーン仕様](references/deck-spec.md)に従いscene.yamlを作る。自由な位置・寸法・重なり・回転・文字組みを要素単位で指定する。これはAIが作る内部ファイルであり、利用者に書かせない。初期アダプターはtext/shape/path/imageに対応する。ネイティブ表・グラフ等を必要とする依頼では、アダプターを実装・検証してから進め、画像化や箇条書きへの置換で済ませない。
 7. 元ファイルのSHA-256をsceneへ記録する。元のYAMLが変わったら必ず再解釈して設計を更新する。ハッシュだけを更新して流用しない。
@@ -52,6 +52,7 @@ description: 題材・構成・任意のスタイルYAMLから、AIがページ�
 
    --validate-onlyは入力検証だけを行う。既存出力を上書きしない。output.rendererはlibreoffice（既定）、powerpoint（Windowsのみ）、none。--rendererでも指定でき、--pptx-onlyはnoneの別名。noneは利用者の明示指定時に「PPTX生成済み・見た目未確認」として納品可能。変換失敗を理由に無断でnoneへ切り替えない。ホスト専用の操作記録はホスト側で実行する。
 9. まず代表ページの構図をプレビューで比較し、全体へ展開する。代表ページの扱いは[デザイン方針](references/design-plan.md)に従う。続いて[品質検証](references/quality-gates.md)に従い全ページを見る。単に文字が収まったかではなく、内容・判読性・スタイルを別々に評価する。修正時は--next-outputで別名生成し、outputフォルダーを削除しない。review.jsonを記録後、scripts/review_deck.py --output <pptx>（同梱版はreview --project <project> --output <pptx>）を実行して納品物とレビューの一致を確認する。noneでは見た目未確認を保持する。
+10. [ページ別の説明資料](references/design-notes.md)に従い、各ページの目的、伝えたいこと、実際に使ったテクニックとその箇所・狙い、想定する読み順をMarkdownへ書き出す。標準の納品物として最終PPTXと同じ場所に `<PPTX名の拡張子を除いた部分>.design-notes.md` を保存し、資料と一緒に案内する。説明資料も最終版に合わせ、旧版を上書きしない。利用者が説明資料不要と明示した場合は省略する。
 
 ## 設計の判断
 

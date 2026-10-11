@@ -114,6 +114,13 @@ class WorkflowTests(unittest.TestCase):
         plan['slides'][0]['focal_element']='not-found'
         with self.assertRaisesRegex(SpecError,'focal_element'):check_plan(self.write('design-plan.yaml',plan),scene)
 
+    def test_plan_rejects_invalid_balance_reference(self):
+        scene = self.scene(); plan = self.plan(scene)
+        plan['slides'][0]['balance_groups'] = [dict(id='labels', reason='Same role',
+            members=[dict(shape='missing', label='t')], checks=dict(font_size=dict(min=40)))]
+        with self.assertRaisesRegex(SpecError, 'Invalid balance shape reference'):
+            check_plan(self.write('design-plan.yaml', plan), scene)
+
     def fixture_review(self):
         output=self.base/'deck.pptx';output.write_bytes(b'fixture-not-a-pptx')
         preview=self.base/'deck.preview';preview.mkdir()

@@ -32,6 +32,8 @@ prepareのpolicyは許可条件の記録であって、実施済み・承認済�
 
 buildは必須文字列（または根拠付き置換後）が編集可能テキストに残るか検査する。意味の同等性は自動判定しない。review.jsonのsource_content_evidenceに原稿・基準・変更記録を独立に照合した結果を残す。
 
+AIが作った要約の文言を、利用者が指定した引用・必須文と取り違えない。わかりにくい要約は原稿に戻って編集し、上記の変更記録で追跡する。保持する主張・条件を確かめず、sceneへ合わせて検査基準を緩めることは禁止。言い換えを検討せず、既存の文章を並べ替えるだけで改善としない。
+
 ## 代表ページの試作
 
 `prototype --project <project> --config decksmith.resolved.yaml --destination prototype-01 --slides opening comparison`
@@ -45,3 +47,5 @@ scene/structure/design-plan/style、必要画像、独立基準を新規フォ�
 通常版workflow.pyのcompareは--project不要（パスを直接指定）。PPTXとPNGの指紋を照合しchanged/unchanged/removedを返す。changedは個別に再確認、unchangedは同一画像の確認記録を引き継げるが、全体の順序・内容・スタイル要件は再確認する。自動でpassedにしない。
 
 レビュー対象はbuildが返したoutputを使用し、連番最大だから完成と判断しない。review結果を確認しDELIVERY.mdへ納品対象を明記する。policy記録がある場合はreview.jsonのpolicy_evidenceへ実際の利用と承認の照合結果を書く。プレースホルダー納品はdelivery_status=awaiting_imagesとし、review結果もawaiting_images。noneは見た目未確認のまま。
+
+AIは[ページ別の説明資料](design-notes.md)を最終版に合わせて作成し、PPTXと同じ場所へ同じ名前の `.design-notes.md` として保存する。DELIVERY.mdにも含める。build/reviewコマンド単体は説明文を生成しないため、制作を担当するAIがこの納品工程を完了する。

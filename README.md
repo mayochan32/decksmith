@@ -67,6 +67,8 @@ setting/brief.mdの内容を、setting/style.yamlのデザインでPowerPointに
 | PPTX＋プレビュー＋PDF | 上記に加え、`output.pdf: true` を指定 |
 | PPTXのみ | `output.renderer: none` と `output.pdf: false` を指定。見た目未確認として納品 |
 
+AIによる制作では、各ページの目的・使ったテクニック・適用箇所と狙い・想定する読み順を説明した `.design-notes.md` も標準で納品します。最終PPTXと同じ名前で `output/` に保存します。
+
 画像は、提供画像のみを使う、利用環境の画像生成も使う、画像なしで構成する方法を選べます。画像生成機能の有無はAI環境によって異なります。具体的な依頼例と設定は[利用ガイド2章](USER_GUIDE.md#2-プレゼン資料生成方法)を参照してください。
 
 ## Windows PORTABLE版 — ZIPを展開して使える正式な配布方式

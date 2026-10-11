@@ -30,6 +30,8 @@ python3 skills/decksmith/scripts/create_deck.py \
 
 成功終了は視覚品質の合格を意味しない。レビュー台帳は未確認状態で生成し、AIが全ページを確認して修正する。
 
+設計ガイド変更の効果は[デザイン品質の比較検証](research/design-evaluation.md)で確認する。[内容を伝えるための設計原則](research/communication-design-principles.md)には、具体的な技法と生成・レビューへの組み込み先を記録している。
+
 ## テストと配布
 
 ```bash
@@ -58,3 +60,14 @@ python -m unittest discover -s tests -p test_render_contract.py
 PNGの寸法・枚数、PDF生成、出力保護を検査する。さらに実資料で日本語・空白入りパス、指定フォント、複数ページの外観を確認する。起動中の既存資料がある場合の拒否と資料保持、実行ポリシーによる拒否、タイムアウト時に既存資料を終了しないことも確認する。PowerPointが残る場合は利用者が確認・終了し、テストで全プロセスを強制終了しない。
 
 使用する公式API：[Presentations.Open](https://learn.microsoft.com/en-us/office/vba/api/powerpoint.presentations.open)、[Slide.Export](https://learn.microsoft.com/en-us/office/vba/api/powerpoint.slide.export)、[ExportAsFixedFormat](https://learn.microsoft.com/en-us/office/vba/api/powerpoint.presentation.exportasfixedformat)。
+
+- [文字と図形のバランス：実装と検証](research/layout-balance-results.md)
+
+- [相対性理論6ページの生成・確認記録](research/relativity-trial-results.md)
+
+- [相対性理論6ページ：朱赤と網点スタイルの適用確認](research/relativity-halftone-red-results.md)
+
+- [内容に応じた構図の選択と、資料全体の反復の見直し](research/content-composition-results.md)
+- [主張と説明の対応を見直す](research/message-clarity-results.md)
+- [画像量normalと自然な重ね方の比較](research/normal-images-results.md)
+- [幻想水彩・画像量moreの試作](research/ethereal-fantasy-results.md)

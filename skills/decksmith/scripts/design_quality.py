@@ -3,6 +3,7 @@
 No style presets; these checks cannot judge semantic or aesthetic quality.
 """
 from compile_spec import SpecError, load_mapping, number, text
+from layout_balance import check_balance_groups, inspect_balance
 
 
 def check_plan(path, scene):
@@ -43,6 +44,7 @@ def check_plan(path, scene):
         for element in actual['elements']:
             if element['type'] == 'text' and element.get('role') not in roles:
                 raise SpecError('Every planned text element needs a defined role: ' + element['id'])
+        check_balance_groups(planned, actual)
     representatives = plan.get('representative_slides')
     ids = {s['id'] for s in scene['slides']}
     if (not isinstance(representatives, list) or not representatives
@@ -54,8 +56,10 @@ def check_plan(path, scene):
 
 def inspect_design(scene, plan=None):
     warnings = []
+    balance_measurements = []
     height = scene['canvas']['height']
     roles = plan['typography'] if plan else {}
+    planned_slides = {s['id']: s for s in plan['slides']} if plan else {}
     if plan is None:
         warnings.append({'id': 'design-plan-missing', 'message': 'Legacy build: design direction has not been recorded.'})
     for slide in scene['slides']:
@@ -72,4 +76,9 @@ def inspect_design(scene, plan=None):
             fonts = {r.get('font', element['font']) for r in element.get('runs', [{}])}
             if rule and fonts != {rule['font']}:
                 warnings.append({'id': target + ':font', 'message': 'Font differs from planned role; verify intentional substitution.'})
-    return {'automated_scope': 'measurements_only_not_visual_approval', 'warnings': warnings}
+        balance_warnings, measurements = inspect_balance(slide, planned_slides.get(slide['id'], {}))
+        warnings.extend(balance_warnings)
+        balance_measurements.extend(measurements)
+    return {'automated_scope': 'measurements_only_not_visual_approval', 'warnings': warnings,
+            'balance_scope': 'Declared groups only; text-box geometry and font em size, not glyph bounds. No overlap prohibition.',
+            'balance_measurements': balance_measurements}
