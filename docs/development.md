@@ -69,3 +69,4 @@ PNGの寸法・枚数、PDF生成、出力保護を検査する。さらに実�
 
 - [内容に応じた構図の選択と、資料全体の反復の見直し](research/content-composition-results.md)
 - [主張と説明の対応を見直す](research/message-clarity-results.md)
+- [画像量normalと自然な重ね方の比較](research/normal-images-results.md)
