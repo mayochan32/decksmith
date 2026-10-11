@@ -62,3 +62,5 @@ PNGの寸法・枚数、PDF生成、出力保護を検査する。さらに実�
 使用する公式API：[Presentations.Open](https://learn.microsoft.com/en-us/office/vba/api/powerpoint.presentations.open)、[Slide.Export](https://learn.microsoft.com/en-us/office/vba/api/powerpoint.slide.export)、[ExportAsFixedFormat](https://learn.microsoft.com/en-us/office/vba/api/powerpoint.presentation.exportasfixedformat)。
 
 - [文字と図形のバランス：実装と検証](research/layout-balance-results.md)
+
+- [相対性理論6ページの生成・確認記録](research/relativity-trial-results.md)
