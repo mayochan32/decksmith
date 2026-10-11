@@ -32,6 +32,8 @@ prepareのpolicyは許可条件の記録であって、実施済み・承認済�
 
 buildは必須文字列（または根拠付き置換後）が編集可能テキストに残るか検査する。意味の同等性は自動判定しない。review.jsonのsource_content_evidenceに原稿・基準・変更記録を独立に照合した結果を残す。
 
+AIが作った要約の文言を、利用者が指定した引用・必須文と取り違えない。わかりにくい要約は原稿に戻って編集し、上記の変更記録で追跡する。保持する主張・条件を確かめず、sceneへ合わせて検査基準を緩めることは禁止。言い換えを検討せず、既存の文章を並べ替えるだけで改善としない。
+
 ## 代表ページの試作
 
 `prototype --project <project> --config decksmith.resolved.yaml --destination prototype-01 --slides opening comparison`
