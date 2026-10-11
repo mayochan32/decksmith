@@ -64,3 +64,5 @@ PNGの寸法・枚数、PDF生成、出力保護を検査する。さらに実�
 - [文字と図形のバランス：実装と検証](research/layout-balance-results.md)
 
 - [相対性理論6ページの生成・確認記録](research/relativity-trial-results.md)
+
+- [相対性理論6ページ：朱赤と網点スタイルの適用確認](research/relativity-halftone-red-results.md)
