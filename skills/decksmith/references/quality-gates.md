@@ -32,6 +32,8 @@ review.jsonに出力PPTXのSHA-256、確認したページ、確認結果、変�
 
 ## 納品時の整合性チェック
 
+納品前に[ページ別の説明資料](design-notes.md)を作り、全ページの目的・テクニック・適用箇所が最終PPTXの順序と実際の表現に対応するか確認する。対象版とリンク先も照合する。この説明文の確認はAIの納品工程であり、以下のreviewコマンドが自動検査する範囲には含まれない。
+
 `python3 <skill>/scripts/review_deck.py --output <pptx>`を使う。同梱版は`decksmith.cmd review --project <project> --output output/<name>.pptx`。別のレビューは--reviewで指定できる。実行は読取専用で、合格の視覚判断を自動作成しない。
 
 review.jsonは以下の形式。manifestの指紋を対象PNG/PPTXと照合した上で記録する。証拠文は実際に確認した具体的な内容とし、全項目に同じ「問題なし」をコピーしない。

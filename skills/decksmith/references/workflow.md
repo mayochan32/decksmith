@@ -47,3 +47,5 @@ scene/structure/design-plan/style、必要画像、独立基準を新規フォ�
 通常版workflow.pyのcompareは--project不要（パスを直接指定）。PPTXとPNGの指紋を照合しchanged/unchanged/removedを返す。changedは個別に再確認、unchangedは同一画像の確認記録を引き継げるが、全体の順序・内容・スタイル要件は再確認する。自動でpassedにしない。
 
 レビュー対象はbuildが返したoutputを使用し、連番最大だから完成と判断しない。review結果を確認しDELIVERY.mdへ納品対象を明記する。policy記録がある場合はreview.jsonのpolicy_evidenceへ実際の利用と承認の照合結果を書く。プレースホルダー納品はdelivery_status=awaiting_imagesとし、review結果もawaiting_images。noneは見た目未確認のまま。
+
+AIは[ページ別の説明資料](design-notes.md)を最終版に合わせて作成し、PPTXと同じ場所へ同じ名前の `.design-notes.md` として保存する。DELIVERY.mdにも含める。build/reviewコマンド単体は説明文を生成しないため、制作を担当するAIがこの納品工程を完了する。
