@@ -66,3 +66,5 @@ PNGの寸法・枚数、PDF生成、出力保護を検査する。さらに実�
 - [相対性理論6ページの生成・確認記録](research/relativity-trial-results.md)
 
 - [相対性理論6ページ：朱赤と網点スタイルの適用確認](research/relativity-halftone-red-results.md)
+
+- [内容に応じた構図の選択と、資料全体の反復の見直し](research/content-composition-results.md)
