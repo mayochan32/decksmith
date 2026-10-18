@@ -51,3 +51,16 @@ READMEとUSER_GUIDEの導入方法・依頼例・更新手順を揃えた後、�
 | decksmith-v0.9.0-portable-win-x64.zip | ceea7792cac638d77909fdd756cc7c6e73c052b14c62040fb9da8bf3893150c1 |
 
 Windows実機・PowerPointでの確認、各クライアント画面からの導入、ブラウザー実行は引き続き未実施。
+
+## 制作開始用設定の同梱 — 2026-10-18
+
+通常版とWindows PORTABLE版のZIP直下にsetting/decksmith.yamlを追加。通常版は共通雛形と一致、PORTABLE版はrendererのみpowerpointへ変更した。出力先../output、原稿・スタイルのnullを維持したことを確認。既存のtemplates/decksmith.yamlも保持。
+
+全119件中118件成功、Windows実機専用の1件は未実施。実際に作成したPORTABLE ZIPの設定・同梱JavaScriptを検査し、両ZIPの共通Skillとガイドを現在のソースと照合した。
+
+更新用ファイルはdist/release-v0.9.0-settings-20261018/へ保存。公開済みタグは移動せず、v0.9.0の添付ZIPとチェックサムを更新する。以前のZIPはローカルに保持している。
+
+| 更新用ファイル | SHA-256 |
+| --- | --- |
+| decksmith-v0.9.0.zip | 574f542045a38d577615591f870c2ed91e2678e16bd74d68df775e891d69b662 |
+| decksmith-v0.9.0-portable-win-x64.zip | 2c0725375e111f1dd799017178d1454d37c246d8d39b9469a3e87426ba1b0c55 |

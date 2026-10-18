@@ -15,6 +15,8 @@ def package(output):
     target.mkdir(parents=True)
     (target/"templates").mkdir()
     shutil.copy2(root/"skills/decksmith/assets/decksmith.yaml",target/"templates/decksmith.yaml")
+    (target/"setting").mkdir()
+    shutil.copy2(root/"skills/decksmith/assets/decksmith.yaml",target/"setting/decksmith.yaml")
     shutil.copy2(root/"skills/decksmith/VERSION",target/"VERSION")
     shutil.copytree(root/"skills",target/"skills",ignore=shutil.ignore_patterns("node_modules","__pycache__","*.pyc", ".DS_Store"))
     # All hosts share one Skill. Copilot uses setup_workspace.py without a manifest.

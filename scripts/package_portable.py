@@ -36,6 +36,11 @@ def package(inputs, output, npm, cache=None):
         stage.mkdir()
         (stage / 'templates').mkdir()
         shutil.copy2(root / 'skills/decksmith/assets/decksmith.yaml', stage / 'templates/decksmith.yaml')
+        # Explicit Windows starter settings; keep the reusable template unchanged.
+        (stage / 'setting').mkdir()
+        settings = (root / 'skills/decksmith/assets/decksmith.yaml').read_text(encoding='utf-8')
+        settings = settings.replace('renderer: libreoffice', 'renderer: powerpoint', 1)
+        (stage / 'setting/decksmith.yaml').write_text(settings, encoding='utf-8')
         for name in ('decksmith.cmd', 'launcher.py', 'runtime-lock.json'):
             shutil.copy2(runtime_source / name, stage / name)
         for name in ('VERSION', 'LICENSE', 'README.md', 'USER_GUIDE.md', 'PORTABLE_GUIDE.md', 'BROWSER_TRIAL.md'):

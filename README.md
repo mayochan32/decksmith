@@ -16,6 +16,8 @@ DeckSmithは、スタイルYAMLをAIが解釈して、内容に合わせた編�
 
 通常版には各ツールの登録情報が共存しますが、利用しないAIツールのインストールや契約は不要です。Gemini CLIでの実利用は未検証です。
 
+配布ZIPには制作開始用の `setting/decksmith.yaml` を同梱しています。通常版はLibreOffice、Windows PORTABLE版はPowerPoint方式を設定済みです。PowerPointを使わずPPTXのみを作る場合は `output.renderer: none` に変更してください。
+
 作業フォルダーは、原稿・設定・参考資料を入れる `setting/` と、生成結果を保存する `output/` を同列に分けます。`setting/decksmith.yaml` の出力先は既定で `../output` です。
 
 - 手順全体：[利用ガイド](USER_GUIDE.md)

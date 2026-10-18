@@ -121,6 +121,16 @@ class PortableTests(unittest.TestCase):
                 self.assertIsNone(z.testzip())
                 z.extractall(folder)
             root = Path(folder) / 'decksmith-portable'
+            from compile_spec import load_mapping
+            config = load_mapping(root / 'setting/decksmith.yaml')
+            template = load_mapping(root / 'templates/decksmith.yaml')
+            self.assertEqual(config['output']['renderer'], 'powerpoint')
+            self.assertEqual(config['output']['directory'], '../output')
+            self.assertEqual((root / 'setting' / config['output']['directory']).resolve(), root / 'output')
+            self.assertIsNone(config['input']['style'])
+            self.assertIsNone(config['input']['brief'])
+            template['output']['renderer'] = 'powerpoint'
+            self.assertEqual(config, template)
             self.assertTrue((root / 'skills/decksmith/scripts/process_environment.py').is_file())
             for path in ('runtime/python/python.exe', 'runtime/node/node.exe'):
                 self.assertEqual((root / path).read_bytes()[:2], b'MZ')

@@ -223,7 +223,11 @@ YAMLを `setting/style.yaml` に保存します。Markdownの囲み記号は除�
 
 #### 雛形から作る
 
-配布物の `templates/decksmith.yaml`、または `skills/decksmith/assets/decksmith.yaml` を `setting/decksmith.yaml` へコピーし、必要な値だけ変更します。
+配布ZIPの直下に `setting/decksmith.yaml` を用意しています。展開先を作業フォルダーとして使うか、`setting/` を自分の `my-presentations/` へコピーし、必要な値を変更してください。通常版は `renderer: libreoffice`、Windows PORTABLE版は `renderer: powerpoint` を設定済みです。PPTXのみなら `renderer: none` に変更します。
+
+`brief.md` と `style.yaml` は自分で用意する資料です。同梱設定の `input.brief` と `input.style` は `null` のため、存在しない原稿やスタイルを参照しません。ファイルを用意したら対応する名前を指定するか、AIへ依頼内容と保存場所を伝えます。出力先は設定から一段上の `output/` です。
+
+別の資料を始めるための雛形は、引き続き `templates/decksmith.yaml` と `skills/decksmith/assets/decksmith.yaml` にあります。既存の `setting/decksmith.yaml` がある場所には上書きコピーしないでください。
 
 PORTABLE版は、PowerPoint用の値を設定して雛形を作れます。
 

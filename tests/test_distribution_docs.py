@@ -26,6 +26,8 @@ class DistributionDocsTests(unittest.TestCase):
             target=package(Path(raw))
             self.check_links(target)
             self.assertTrue((target/'templates/decksmith.yaml').is_file())
+            self.assertEqual((target/'setting/decksmith.yaml').read_bytes(),
+                             (ROOT/'skills/decksmith/assets/decksmith.yaml').read_bytes())
             version=(target/'VERSION').read_text().strip().removeprefix('v')
             for name in ('.codex-plugin/plugin.json','.claude-plugin/plugin.json','gemini-extension.json'):
                 manifest=json.loads((target/name).read_text())

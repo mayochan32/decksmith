@@ -34,7 +34,9 @@ PowerPointを使わない場合は `--renderer none` にします。通常のdoc
 - `style.yaml`：配色・書体・構図・画像表現など。作り方は[Qiitaの記事](https://qiita.com/mayochan32/items/18323a3f5201d08e8afc)を参照。
 - `decksmith.yaml`：サイズ・言語・通信・画像方針・出力方式。
 
-全設定入り雛形を作るには次を実行します。既存ファイルは上書きしません。
+配布ZIPには `setting/decksmith.yaml` を同梱し、`renderer: powerpoint` を設定済みです。展開先を作業フォルダーにするか、`setting/` を自分の `my-presentations/` へコピーして使えます。PowerPointを使わない場合は `renderer: none` に変更してください。`brief.md` と `style.yaml` は別途用意します。
+
+設定のない新しい作業フォルダーで雛形を作る場合は、次を実行します。同梱設定を使う場合、このinit操作は不要です。既存ファイルは上書きしません。
 
 ```powershell
 & 'C:\Tools\decksmith-portable\decksmith.cmd' init --project 'C:\work\my-presentations\setting' --renderer powerpoint

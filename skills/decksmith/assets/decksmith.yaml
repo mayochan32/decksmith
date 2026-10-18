@@ -1,4 +1,4 @@
-# DeckSmith 制作設定の雛形。setting/decksmith.yamlへコピーして編集してください。
+# DeckSmith 制作設定。必要な値を編集してください。新しい資料ではsetting/decksmith.yamlとして使います。
 # デザインそのものは style.yaml に記述します（スタイルプリセットではありません）。
 # null は「未指定」。AIが依頼・原稿から判断します。空文字とは異なります。
 slide:
