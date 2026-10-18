@@ -51,7 +51,7 @@ description: 題材・構成・任意のスタイルYAMLから、AIがページ�
    ```
 
    --validate-onlyは入力検証だけを行う。既存出力を上書きしない。output.rendererはlibreoffice（既定）、powerpoint（Windowsのみ）、none。--rendererでも指定でき、--pptx-onlyはnoneの別名。noneは利用者の明示指定時に「PPTX生成済み・見た目未確認」として納品可能。変換失敗を理由に無断でnoneへ切り替えない。ホスト専用の操作記録はホスト側で実行する。
-9. まず代表ページの構図をプレビューで比較し、全体へ展開する。代表ページの扱いは[デザイン方針](references/design-plan.md)に従う。画面から読み取れる主張、図と説明のまとまり、前後のページとのつながりを[構図のレビュー](references/composition-design.md#描画して確かめる)で確認し、弱い場合はパーツの位置関係から修正する。続いて[品質検証](references/quality-gates.md)に従い全ページを見る。内容・判読性・スタイルを別々に評価する。修正時は--next-outputで別名生成し、outputフォルダーを削除しない。review.jsonを記録後、scripts/review_deck.py --output <pptx>（同梱版はreview --project <project> --output <pptx>）を実行して納品物とレビューの一致を確認する。noneでは見た目未確認を保持する。
+9. まず代表ページの構図をプレビューで比較し、全体へ展開する。代表ページの扱いは[デザイン方針](references/design-plan.md)に従う。続いて[品質検証](references/quality-gates.md)に従い全ページを見る。単に文字が収まったかではなく、内容・判読性・スタイルを別々に評価する。修正時は--next-outputで別名生成し、outputフォルダーを削除しない。review.jsonを記録後、scripts/review_deck.py --output <pptx>（同梱版はreview --project <project> --output <pptx>）を実行して納品物とレビューの一致を確認する。noneでは見た目未確認を保持する。
 10. [ページ別の説明資料](references/design-notes.md)に従い、各ページの目的、伝えたいこと、実際に使ったテクニックとその箇所・狙い、想定する読み順をMarkdownへ書き出す。標準の納品物として最終PPTXと同じ場所に `<PPTX名の拡張子を除いた部分>.design-notes.md` を保存し、資料と一緒に案内する。説明資料も最終版に合わせ、旧版を上書きしない。利用者が説明資料不要と明示した場合は省略する。
 
 ## 設計の判断
