@@ -1,0 +1,43 @@
+# ページのまとまりと資料全体の流れ
+
+2026-10-18。開発ブランチ `codex/cohesive-presentation-design`。開始点は main `423f27c`。利用者の「パーツがばらばら」「同じパターンの繰り返し」という評価を受けた実験。mainへのマージ、配布物の更新はしない。
+
+## 公開資料から採用する判断
+
+以下は著者・制作会社・研究グループが公開している一次資料。公開記事の指針を参照したもので、著書全体の読了やモデルの学習を意味しない。各著者の作風や完成レイアウトは複製しない。
+
+| 出典 | 参照した考え方 | DeckSmithでの判断 |
+| --- | --- | --- |
+| [NN/g — Proximity Principle in Visual Design](https://www.nngroup.com/articles/gestalt-proximity/) | 近さと余白は要素の所属を伝える。 | 説明の帰属先を決め、対象から離れたラベルや均等に散った補足を組み直す。UIに関する知見のスライドへの応用であり、今回のプレゼンの理解度を実証するものではない。 |
+| [NN/g — Common Region](https://www.nngroup.com/articles/common-region/) | 共通領域で同じ群を示せる。 | 必要なら背景も使うが、すべてをカードへ囲まない。原稿上の関連がないものを一群に見せない。 |
+| [Garr Reynolds — Design Tips](https://www.garrreynolds.com/design-tips) | 対比・焦点・余白と、一覧で見る資料全体の流れ。 | 同じ大きさの部品を並べず、主役を選ぶ。不要な飾りを減らし、図と本文の主従を調整する。三分割や文字数を一律の規則にはしない。 |
+| [Duarte — When presenting data, get to the point fast](https://www.duarte.com/blog/when-presenting-data-get-to-the-point-fast/) | 同じデータでも示したい意味により強調箇所と図を選ぶ。 | 内容の結論・関係から構図を選び、重要な説明をその対象へ結びつける。資料中の数値や必須条件を削る根拠にはしない。 |
+| [Duarte — Using Contrast to Craft Persuasive Presentations](https://www.duarte.com/blog/ultimate-guide-to-contrast/) | 情報・視覚・進行の対比でメッセージの転換を伝える。 | 前ページから何を知り、次に何を見るかを計画する。常に問題と解決を交互に置く形や、全ページ違う構図は強制しない。 |
+| [Assertion-Evidence — Penn State Leonhard Center](https://www.assertion-evidence.org/) | 題目だけでなくメッセージを示し、視覚的な証拠で支える。 | 主張とそれを支える図の読み取りを照合する。生成した装飾画を証拠と呼ばず、上段の文章見出しも必須化しない。 |
+
+実務家の指針と、研究グループによる推奨を区別する。今回、理解度・記憶・美的嗜好の統計的な効果検証は行っていない。
+
+## 既存の指示で足りなかった部分
+
+既に「一つの主張」「主役と補足」「構図の変化」は指示されていた。問題は、その意図を説明文に記録しても、実際の画面で説明が孤立しているか、何を移動すべきかまで確かめる工程が弱いことだった。
+
+今回の変更は、レイアウト候補の追加やサイズの強制ではなく、配置と修正の判断を具体化するもの。
+
+| 組み込み先 | 変更 |
+| --- | --- |
+| `skills/decksmith/references/composition-design.md` | 対象と説明、群内・群間の余白、画像の静かな領域、競合する装飾の整理を設計。画面を先に見て帰属先を確認し、孤立があれば位置関係を修正する。 |
+| `skills/decksmith/references/design-plan.md` | compositionに具体的な帰属先と揃え方を書く。任意メモtransitionで前後の意味のつながりを記録する。 |
+| `skills/decksmith/SKILL.md` | 制作工程から構図の実画面レビューを参照する。 |
+| `skills/decksmith/references/quality-gates.md` | 各ページのまとまりと、一覧での反復を両方確認する。 |
+
+配置を決めるのはSkillを読むAI。描画エンジンは座標を描く役割を維持し、近接距離から意味や魅力を自動採点しない。新たな固定テンプレート、全ページの最大文字サイズ指定、構図の種類数のノルマは加えていない。
+
+## 適用例の条件
+
+以前の相対性理論・水彩版6ページを基準とする。元原稿、スタイル、structure、content-contract、content-changes、画像6枚を同一に保つ。英字の装飾見出し以外の既存本文を空白・改行を除いて保持し、全文の発表者ノートも照合する。再生成した悪いbeforeは用意しない。
+
+成果物はローカルの `artifacts/relativity-cohesion-20261018/`。入力・旧版参照・生成記録・修正版・全ページの説明資料・比較画面を保存する。利用者の参考資料や原稿をこの研究文書へ転載しない。
+
+これは同じAIが既存出力を改訂した**適用例**であり、旧ガイドと新ガイドの独立生成によるA/Bではない。別題材・別スタイル、独立した生成、利用者の好みの確認は未実施。技術的な検査の合格を、そのまま魅力の改善やmainへの受入判定にしない。
+
+具体的な観察と検査結果は [適用結果](cohesion-trial-20261018.md) に記録する。
