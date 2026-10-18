@@ -126,7 +126,8 @@ class PortableTests(unittest.TestCase):
             template = load_mapping(root / 'templates/decksmith.yaml')
             self.assertEqual(config['output']['renderer'], 'powerpoint')
             self.assertEqual(config['output']['directory'], '../output')
-            self.assertEqual((root / 'setting' / config['output']['directory']).resolve(), root / 'output')
+            self.assertEqual((root / 'setting' / config['output']['directory']).resolve(),
+                             (root / 'output').resolve())
             self.assertIsNone(config['input']['style'])
             self.assertIsNone(config['input']['brief'])
             template['output']['renderer'] = 'powerpoint'
