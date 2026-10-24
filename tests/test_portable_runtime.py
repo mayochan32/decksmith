@@ -26,6 +26,46 @@ builder = module('portable_builder', ROOT / 'scripts/package_portable.py')
 
 
 class PortableTests(unittest.TestCase):
+    def test_pdf_input_routes_config_font_map_and_bundled_optional_dependencies(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw); project = root / 'setting'; project.mkdir()
+            (project / 'decksmith.yaml').write_text('output:\n  renderer: powerpoint\n')
+            args = argparse.Namespace(project=project, action='inspect-source', renderer=None,
+                source=Path('original.pdf'), style=Path('style.yaml'), pdf_font_map=Path('fonts.json'))
+            cmd, _ = launcher.command(root, args)
+            self.assertEqual(cmd[cmd.index('--renderer')+1], 'powerpoint')
+            self.assertEqual(cmd[cmd.index('--pdf-font-map')+1], str((project / 'fonts.json').resolve()))
+            self.assertEqual(cmd[cmd.index('--config')+1], str((project / 'decksmith.yaml').resolve()))
+            (root / 'runtime/pdf').mkdir(parents=True)
+            with patch.dict(os.environ, {'DECKSMITH_PDF_PYTHON': '/host/python', 'DECKSMITH_PDF_MODULES': '/host/dependencies'}):
+                env = launcher.environment(root)
+            self.assertNotIn('DECKSMITH_PDF_PYTHON', env)
+            self.assertEqual(env['DECKSMITH_PDF_MODULES'], str(root / 'runtime/pdf'))
+
+    def test_restyle_routes_to_shared_engine_and_preserves_relative_paths(self):
+        with tempfile.TemporaryDirectory() as folder:
+            project = Path(folder)
+            args = argparse.Namespace(project=project, action='inspect-source', renderer=None,
+                                      source=Path('original.pptx'), style=Path('style.yaml'))
+            cmd, cwd = launcher.command(Path('/bundle'), args)
+            self.assertIn('/bundle/skills/decksmith/scripts/restyle_deck.py', cmd)
+            self.assertIn('inspect', cmd)
+            self.assertIn(str(project.resolve() / 'original.pptx'), cmd)
+            self.assertIn(str(project.resolve() / 'restyle'), cmd)
+            args.action = 'restyle'; args.renderer = 'powerpoint'; args.next_output = True
+            cmd, cwd = launcher.command(Path('/bundle'), args)
+            self.assertIn('apply', cmd)
+            self.assertIn(str(project.resolve() / 'restyle/restyle-plan.yaml'), cmd)
+            self.assertIn('--next-output', cmd)
+            self.assertEqual(cmd[cmd.index('--renderer')+1], 'powerpoint')
+            for mode in ('2', '3'):
+                args.mode = mode
+                cmd, _ = launcher.command(Path('/bundle'), args)
+                self.assertEqual(cmd[cmd.index('--mode')+1], mode)
+            args.renderer = None
+            with self.assertRaisesRegex(ValueError, 'no automatic fallback'):
+                launcher.command(Path('/bundle'), args)
+
     def test_environment_uses_only_bundled_runtime(self):
         with patch.dict(os.environ, {'PYTHONPATH': 'host', 'NODE_OPTIONS': '--bad',
                                      'DECKSMITH_NODE': 'host', 'DECKSMITH_SOFFICE': 'host'}):

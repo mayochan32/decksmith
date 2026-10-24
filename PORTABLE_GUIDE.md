@@ -121,8 +121,14 @@ WindowsのSystemRoot・WINDIRが不足または空の場合は、Windows APIで�
 | `build --project <folder> --next-output` | 既存出力を残して生成 |
 | `compare --project <folder> --previous ../output/old.pptx --output ../output/new.pptx` | 描画されたページの差分確認 |
 | `review --project <folder> --output ../output/presentation.pptx` | 納品物とレビュー記録の整合性確認 |
+| `inspect-source --project <folder> --source original.pptx --style style.yaml` | 既存PPTXを解析し、スタイル変換計画の雛形を作る |
+| `restyle --project <folder> --source original.pptx --style style.yaml --renderer powerpoint --next-output` | AIが完成させた計画でモード①のスタイル変更を行う |
 
 prepare後のvalidate/build/prototypeには `--config decksmith.resolved.yaml` を付けます。build/validateは--scene、--structure、--style、--output、--design-planも指定可能です。
+
+PPTXのスタイル変換は3モードに対応。inspect-sourceとrestyleへ`--mode 1`（文章・配置保持）、`--mode 2`（文章改善・配置固定）、`--mode 3`（全体再設計）を指定します。restyleの既定計画はrestyle/restyle-plan.yamlで、--planで変更できます。③の作業先をredesignにするなら`--destination redesign`と`--plan redesign/restyle-plan.yaml`を使います。同じreviewコマンドで各モードの比較記録を検査します。[詳しい手順](skills/decksmith/references/restyle.md)を参照してください。新コマンドのWindows実機での確認は別途必要です。
+
+PDF入力は追加の解析依存を準備した環境で対応します。基本ランタイムには含めていません。同梱Pythonと互換のライブラリを管理者等が`runtime/pdf/`へ準備すると、そのフォルダーだけを読み込みます。`decksmith.cmd doctor --project <project> --pdf-input`で確認できます。ホストのPythonへ自動切り替えたり、依存を自動取得したりしません。文字抽出可能なPDFの①②は原PDFとの取り込み照合が必要で、図表は画像として保持します。スキャン等は③の参考画像取り込みに対応します。[PDF入力の条件と手順](skills/decksmith/references/pdf-input.md)を参照してください。PDF入力のWindows実機検証は未実施です。
 
 --draftは未達要件を含む試作専用で、完成品にはしません。reviewはAIが実際に見た結果を記録した後の整合性検査であり、自動の美的評価ではありません。[制作補助の詳細](skills/decksmith/references/workflow.md)も参照してください。
 

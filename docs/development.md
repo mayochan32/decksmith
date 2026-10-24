@@ -30,6 +30,12 @@ python3 skills/decksmith/scripts/create_deck.py \
 
 成功終了は視覚品質の合格を意味しない。レビュー台帳は未確認状態で生成し、AIが全ページを確認して修正する。
 
+既存PPTXの変換は`restyle_deck.py inspect/apply --mode 1/2/3`を使う。①②は`pptx_restyle.py`が許可書式と②の明示したrunの文章だけを変更する。③は`redesign_deck.py`が原資料から独立した内容一覧を作り、scene・構成・design-plan・全原要素のmappingを検査して共通描画エンジンを呼ぶ。`native_import.py`は配置用rectを元のネイティブ要素へ置換し、実際の参照先だけを移植する。元のグラフ・埋め込みデータ等のバイト列を保持し、全文を画像に置き換えない。`compile_scene`のnative_contentは検証済みの原要素から渡し、通常生成では使用しない。
+
+review_deckはworkflow=restyleを検出し、各モードのレビュー項目と変更前後の指紋を検査する。①の折り返し保持、②の固定枠と文章の意味、③の原要素対応・原ページ網羅・新しい構成を区別する。詳細は[スタイル変換](../skills/decksmith/references/restyle.md)を参照。
+
+PDF入力はpdf_input.pyが任意のローカルPythonでpdf_import.pyを起動し、文字抽出・文字を除いた画像層・原PDFプレビューからpdf-source.pptxを生成する。原PDFとの取り込み確認後、既存3モードへ委譲する。外側の計画は原PDFと取り込みファイルの指紋、内側の計画は取り込みPPTXの指紋を持つ。公開前に原PDFのプレビューへ差し替え、pdf_inputの原資料識別、pdf-plan.json、pdf-conversion.jsonをmanifestへ追加する。PDFの構造とPPTX構造を同一とは扱わない。追加依存と対応判定は[PDF入力](../skills/decksmith/references/pdf-input.md)に記載。
+
 設計ガイド変更の効果は[デザイン品質の比較検証](research/design-evaluation.md)で確認する。[内容を伝えるための設計原則](research/communication-design-principles.md)には、具体的な技法と生成・レビューへの組み込み先を記録している。
 
 ## テストと配布

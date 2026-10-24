@@ -1,0 +1,5 @@
+# Optional local PDF input backend. Installed only when the user chooses PDF input.
+pdfplumber==0.11.9
+pypdf==6.10.0
+pypdfium2==5.14.0
+Pillow==12.3.0

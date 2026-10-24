@@ -82,7 +82,7 @@ TYPES = {
     "image":"path alt fit prompt",
 }
 
-def compile_scene(scene_path, style_path, structure_path, allow_draft=False):
+def compile_scene(scene_path, style_path, structure_path, allow_draft=False, native_content=None):
     scene = copy.deepcopy(load_mapping(scene_path))
     keys(scene,"schema_version canvas style_sha256 structure_sha256 requirements slides","scene")
     if scene.get("schema_version") != "1.0":
@@ -191,7 +191,8 @@ def compile_scene(scene_path, style_path, structure_path, allow_draft=False):
                         if not isinstance(point,list) or len(point)!=2:
                             raise SpecError(f"{eid}: invalid point")
                         for v in point: number(v,eid+".point")
-        native=compact("".join(text_content(e) for e in elements if e["type"]=="text"))
+        native=compact("".join(text_content(e) for e in elements if e["type"]=="text")
+                       + (native_content or {}).get(sid, ''))
         for required in content["required_text"]:
             if compact(required) not in native:
                 raise SpecError(f"{sid}: missing editable content {required!r}")

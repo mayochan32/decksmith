@@ -17,6 +17,8 @@ def environment(root):
     announce_repair(report)
     env['DECKSMITH_NODE'] = str(root / 'runtime/node/node.exe')
     env['DECKSMITH_NODE_MODULES'] = str(root / 'skills/decksmith/node_modules')
+    if (root / 'runtime/pdf').is_dir():
+        env['DECKSMITH_PDF_MODULES'] = str(root / 'runtime/pdf')
     if sys.platform == 'win32':
         env['DECKSMITH_POWERSHELL'] = powershell_path(env)
     return env
@@ -54,6 +56,44 @@ def command(root, args):
         if getattr(args, 'review', None):
             cmd += ['--review', str(at_project(args.review))]
         return cmd, project
+    if args.action in ('inspect-source', 'restyle'):
+        source = getattr(args, 'source', None)
+        if not source:
+            raise ValueError(args.action + ' requires --source <PPTX or PDF>')
+        config = at_project(args.config) if getattr(args, 'config', None) else project / 'decksmith.yaml'
+        if getattr(args, 'config', None) and not config.is_file():
+            raise ValueError('Missing config: ' + str(config))
+        settings = resolve_config(config if config.is_file() else None, base=project)
+        style = at_project(args.style) if getattr(args, 'style', None) else Path(settings['input'].get('style', project / 'style.yaml'))
+        cmd += [str(scripts / 'restyle_deck.py'), 'inspect' if args.action == 'inspect-source' else 'apply',
+                '--source', str(at_project(source)), '--style', str(style)]
+        if getattr(args, 'mode', None):
+            cmd += ['--mode', args.mode]
+        if args.action == 'inspect-source':
+            pdf_input = Path(source).suffix.lower() == '.pdf'
+            if (pdf_input or args.renderer) and (args.renderer or settings['output']['renderer']) not in ('none', 'powerpoint'):
+                raise ValueError('Portable supports only none or powerpoint; no automatic fallback.')
+            cmd += ['--destination', str(at_project(getattr(args, 'destination', None) or 'restyle'))]
+            if pdf_input or args.renderer:
+                cmd += ['--renderer', args.renderer or settings['output']['renderer']]
+            if config.is_file():
+                cmd += ['--config', str(config)]
+            if getattr(args, 'pdf_font_map', None):
+                cmd += ['--pdf-font-map', str(at_project(args.pdf_font_map))]
+        else:
+            renderer = args.renderer or settings['output']['renderer']
+            if renderer not in ('none', 'powerpoint'):
+                raise ValueError('Portable supports only none or powerpoint; no automatic fallback.')
+            cmd += ['--plan', str(at_project(getattr(args, 'plan', None) or 'restyle/restyle-plan.yaml')),
+                    '--output', str(at_project(args.output) if getattr(args, 'output', None) else
+                        Path(settings['output']['directory']) / (settings['output']['filename'] or 'restyled.pptx')),
+                    '--renderer', renderer]
+            if config.is_file():
+                cmd += ['--config', str(config)]
+            for flag in ('draft', 'next_output'):
+                if getattr(args, flag, False):
+                    cmd += ['--' + flag.replace('_', '-')]
+        return cmd, project
     config = at_project(args.config) if getattr(args, 'config', None) else project / 'decksmith.yaml'
     if getattr(args, 'config', None) and not config.is_file():
         raise ValueError('Missing config: ' + str(config))
@@ -67,7 +107,7 @@ def command(root, args):
         cmd += [str(scripts / 'doctor.py'), '--renderer', renderer]
         if config.is_file():
             cmd += ['--config', str(config)]
-        for flag in ('fonts', 'test_export'):
+        for flag in ('fonts', 'test_export', 'pdf_input'):
             if getattr(args, flag, False):
                 cmd += ['--' + flag.replace('_', '-')]
     else:
@@ -99,21 +139,22 @@ def main():
     root = Path(__file__).resolve().parent
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--version', action='store_true')
-    parser.add_argument('action', nargs='?', choices=('init', 'doctor', 'validate', 'build', 'review','prepare','freeze-content','prototype','compare'))
+    parser.add_argument('action', nargs='?', choices=('init', 'doctor', 'validate', 'build', 'review','prepare','freeze-content','prototype','compare','inspect-source','restyle'))
     parser.add_argument('--project', type=Path, default=Path.cwd())
     parser.add_argument('--renderer', choices=('none', 'powerpoint'))
-    for name in ('config', 'scene', 'structure', 'style', 'output', 'design-plan', 'review','destination','brief','previous'):
+    for name in ('config', 'scene', 'structure', 'style', 'output', 'design-plan', 'review','destination','brief','previous','source','plan','pdf-font-map'):
         parser.add_argument('--' + name, type=Path)
     parser.add_argument('--slides',nargs='+')
     parser.add_argument('--image-capability',choices=('available','unavailable','unverified'))
     parser.add_argument('--source-evidence')
-    for name in ('validate-only', 'draft', 'next-output', 'fonts', 'test-export'):
+    parser.add_argument('--mode', choices=('1','2','3','style_only','style_and_text','redesign'))
+    for name in ('validate-only', 'draft', 'next-output', 'fonts', 'test-export', 'pdf-input'):
         parser.add_argument('--' + name, action='store_true')
     args = parser.parse_args()
     common = {'project', 'renderer'}
     allowed = {
         'init': common,
-        'doctor': common | {'config', 'fonts', 'test_export'},
+        'doctor': common | {'config', 'fonts', 'test_export', 'pdf_input'},
         'validate': common | {'config', 'scene', 'structure', 'style', 'output', 'design_plan', 'draft', 'validate_only'},
         'build': common | {'config', 'scene', 'structure', 'style', 'output', 'design_plan', 'draft', 'validate_only', 'next_output'},
         'review': {'project', 'output', 'review'},
@@ -121,6 +162,8 @@ def main():
         'freeze-content': {'project','structure','brief'},
         'prototype': {'project','config','destination','slides'},
         'compare': {'project','previous','output'},
+        'inspect-source': common | {'config','source','style','destination','mode','pdf_font_map'},
+        'restyle': common | {'config','source','style','plan','output','draft','next_output','mode'},
     }
     if args.action:
         for key, value in vars(args).items():

@@ -36,6 +36,7 @@ for (const data of spec.slides) {
     if (e.type==="text") {
       const runs=e.runs?.map(r=>({text:r.text,options:style({...e,...r})})) ?? e.text;
       slide.addText(runs,{...box,...style(e),margin:0,breakLine:false,
+        ...(e.wrap !== undefined ? {wrap:e.wrap} : {}),
         align:e.align??"left",valign:e.vertical??"top",lineSpacingMultiple:e.line_spacing??1.05,
         paraSpaceAfterPt:0,paraSpaceBeforePt:0,fit:"none",isTextBox:true,
       });

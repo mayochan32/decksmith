@@ -57,6 +57,7 @@ if __name__=="__main__":
     parser.add_argument("--renderer",choices=("libreoffice","powerpoint","none"))
     parser.add_argument("--test-export",action="store_true",help="Explicitly open a temporary test deck in PowerPoint and test PNG/PDF")
     parser.add_argument("--fonts",action="store_true",help="List installed Windows font families (does not prove glyph coverage)")
+    parser.add_argument('--pdf-input', action='store_true', help='Check optional local PDF parser and renderer dependencies')
     args=parser.parse_args()
     try:
         config=resolve_config(args.config)
@@ -65,6 +66,13 @@ if __name__=="__main__":
             raise SpecError("output.pdf cannot be true with renderer=none")
         report=inspect(renderer)
         extra_ready = True
+        if args.pdf_input:
+            from pdf_input import worker
+            try:
+                report['pdf_input'] = json.loads(worker('--probe'))
+            except (SpecError, OSError, ValueError, subprocess.TimeoutExpired) as error:
+                report['pdf_input'] = {'ready': False, 'error': str(error)}
+                extra_ready = False
         if args.fonts:
             if sys.platform != 'win32':
                 raise SpecError('--fonts currently supports Windows; verify fonts using the local host on other platforms')

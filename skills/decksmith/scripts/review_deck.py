@@ -12,6 +12,9 @@ def verify(output, review_path=None):
     output = Path(output).resolve()
     folder = output.with_suffix('.preview')
     manifest = json.loads((folder / 'review-manifest.json').read_text(encoding='utf-8-sig'))
+    if manifest.get('workflow') == 'restyle':
+        from review_restyle import verify_restyle
+        return verify_restyle(output, manifest, review_path)
     actual = source_hash(output)
     if actual != manifest['output_sha256']:
         raise SpecError('PPTX changed since rendering; regenerate previews and review. Do not replace only the recorded hash.')

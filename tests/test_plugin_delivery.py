@@ -19,6 +19,28 @@ from design_quality import check_plan
 
 
 class PluginDeliveryTests(unittest.TestCase):
+    def test_detached_package_can_restyle_without_developer_workspace(self):
+        from test_restyle import fixture
+        from compile_spec import source_hash
+        with tempfile.TemporaryDirectory() as raw:
+            base = Path(raw)
+            installed = package(base / 'package') / 'skills/decksmith'
+            original = base / 'original.pptx'; fixture(original)
+            style = base / 'style.yaml'; style.write_text('accent: "#123456"')
+            plan = base / 'restyle-plan.yaml'
+            plan.write_text(json.dumps({'schema_version': '1.0', 'mode': 'style_only',
+                'source_sha256': source_hash(original), 'style_sha256': source_hash(style),
+                'requirements': [{'source': '/accent', 'interpretation': 'Recolor a shape',
+                    'status': 'implemented', 'operations': ['recolor']}],
+                'operations': [{'id': 'recolor', 'slide': 1, 'shape_id': '2', 'set': {'fill': '#123456'}}]}))
+            result = subprocess.run([sys.executable, str(installed / 'scripts/restyle_deck.py'),
+                'apply', '--source', str(original), '--style', str(style), '--plan', str(plan),
+                '--output', str(base / 'result.pptx'), '--renderer', 'none'],
+                capture_output=True, text=True, cwd=base, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads(result.stdout)['status'], 'not_visually_reviewed')
+            self.assertTrue((installed / 'references/restyle.md').is_file())
+
     def test_local_catalogs_and_portable_identity_resolve_after_extraction(self):
         with tempfile.TemporaryDirectory(prefix='decksmith plugin ') as raw:
             base = Path(raw)

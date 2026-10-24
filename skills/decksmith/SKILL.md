@@ -1,6 +1,6 @@
 ---
 name: decksmith
-description: 題材・構成・任意のスタイルYAMLから、AIがページを設計して編集可能なPowerPointを生成する。参考資料の表現を分析してスライドを制作する依頼にも使う。
+description: 題材・構成・任意のスタイルYAMLから編集可能なPowerPointを生成する。既存PPTXやPDFのスタイル変更、配置を固定した文章改善、文章と配置の全体再設計にも使う。
 ---
 
 # DeckSmith
@@ -25,6 +25,8 @@ description: 題材・構成・任意のスタイルYAMLから、AIがページ�
 
 ## 制作
 
+既存資料の変換は、先に[既存資料のスタイル変換](references/restyle.md)を読む。①スタイルのみ、②文章改善・配置固定、③文章・配置・ページ構成の再設計に対応する。①②は複製・限定変更、③は元資料の要素との対応を保存してから以下の設計手順を使う。指定されたモードを勝手に変更しない。PDF入力は[PDF取り込み](references/pdf-input.md)も読み、依存・対応可否・原PDFとの取り込み照合を確認する。PDFの図表は画像として保持し、編集可能な元データの復元とは説明しない。旧形式PPT入力は未対応。
+
 標準の作業構成はmy-presentations/setting/に原稿・style.yaml・decksmith.yamlを置き、同列のmy-presentations/output/に納品物を保存する。以下の<project>はsettingフォルダーを指す。設定内の相対パスは設定ファイル基準で、output.directoryの既定は../output。利用者が明示した別の保存先は維持する。
 
 設定ファイルを用意したい利用者にはassets/decksmith.yamlを案内する。scripts/project_init.py（同梱版は`decksmith.cmd init --project <project> --renderer powerpoint`）で全項目入り雛形を作れる。既存ファイルを上書きしない。nullは未指定であり、素材ファイルの作成や内容の推測を許可する指定ではない。
@@ -40,7 +42,7 @@ description: 題材・構成・任意のスタイルYAMLから、AIがページ�
 3. 内容をstructure.yamlへ整理する。各ページにid、purpose、required_text（必ず残す文字列）を記録する。根拠と出典も保持する。内容の短縮は設計前に行い、描画時に切り捨てない。[制作補助](references/workflow.md)のfreeze-contentで原稿由来の基準を保存してからsceneを設計する。修正後のsceneからrequired_textや基準を逆生成しない。変更が必要なら原文・変更後・理由・原稿上の根拠を別記し、最終レビューで意味と必須条件を照合する。
 4. 元YAMLの各末端値を要件台帳へ対応づけ、[デザイン方針](references/design-plan.md)と[内容から図解と読み順を決める](references/communication-design.md)を読んでdesign-plan.yamlを作る。原稿中の要素と関係を確かめ、主張を何で見せるか、ページの骨格、読み順を決めてから文字と素材を配置する。主役を見出しに固定しない。複数ページは[構図の選択と資料全体の流れ](references/composition-design.md)に従い、配置を使い回す前に内容上の理由を確かめる。Typeは利用者の説明用の名前であり、描画エンジンの選択キーではない。作れない要件はblocked/asset_pendingとし、非該当に偽装しない。
 5. 必要な素材を資料内のassets/へ生成・保存する。被写体、配置先、文字安全域、透過、質感を具体的に指定する。事実を示す画像は提供資料を使う。写真や装飾の生成画像に本文や数値を焼き込まない。
-6. [シーン仕様](references/deck-spec.md)に従いscene.yamlを作る。自由な位置・寸法・重なり・回転・文字組みを要素単位で指定する。これはAIが作る内部ファイルであり、利用者に書かせない。初期アダプターはtext/shape/path/imageに対応する。ネイティブ表・グラフ等を必要とする依頼では、アダプターを実装・検証してから進め、画像化や箇条書きへの置換で済ませない。
+6. [シーン仕様](references/deck-spec.md)に従いscene.yamlを作る。自由な位置・寸法・重なり・回転・文字組みを要素単位で指定する。これはAIが作る内部ファイルであり、利用者に書かせない。初期アダプターはtext/shape/path/imageに対応する。モード③で元の表・グラフ・グループを再配置する場合は[スタイル変換](references/restyle.md)のnative経路を使う。元資料にないネイティブ表・グラフ等を新規作成する依頼では、アダプターを実装・検証してから進め、画像化や箇条書きへの置換で済ませない。
 7. 元ファイルのSHA-256をsceneへ記録する。元のYAMLが変わったら必ず再解釈して設計を更新する。ハッシュだけを更新して流用しない。
 8. このSkillのscripts/create_deck.pyを実行する。設定はsceneと同じフォルダーのdecksmith.yamlを自動検出する。別ファイルや解決済み設定は--configで渡す。input.style、output.filenameが設定済みなら--style、--outputは省略できる。
 
