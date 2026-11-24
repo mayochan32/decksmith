@@ -9,7 +9,8 @@ Windowsでは共有process_environment.pyがSystemRoot/WINDIRの不足をWindows
 3. プラグインのキャッシュが読み取り専用なら、package.jsonとpackage-lock.jsonを作業用ディレクトリへコピーしてそこでnpm ciし、そのnode_modulesをDECKSMITH_NODE_MODULESに指定する。
 4. 実行ファイルはPATHで検出する。必要な場合のみDECKSMITH_NODE、DECKSMITH_SOFFICE、DECKSMITH_PDFTOPPMで上書きできる。利用者に開発者の絶対パスを入力させない。
 5. ホストに優先利用すべき依存ランタイムや操作記録の指示がある場合はその指示に従い、実行前に適用する。共有スクリプトからホスト専用処理は呼び出さない。
-6. フォントは埋め込まれない。指定フォントの有無を確認し、代替が必要なら役割を保って記録する。LibreOfficeプレビューとPowerPoint本体の描画には差があり得る。
+6. フォントは埋め込まれない。Windows/macOSはdoctorの`--fonts`で一覧を取得できる。大量の一覧は内部のJSONへ保存して必要な書体を調べる。選んだ名前だけなら`--font "<本文書体>" --font "<見出し書体>"`を使い、requestedのfound/matching_namesを見る。--fontだけの出力は全一覧を省いた短い結果になる。名前比較は大文字小文字・空白・ハイフン・アンダースコアの差を正規化し、完全一致か正規化一致かを区別する。近い名前の別書体へ自動で置換しない。macOSはsystem_profiler、Windowsは既存のローカル書体一覧を使う。Linux等の一覧は未対応。
+7. 書体名が見つかっても、全グリフ・ウェイト・字幅・PowerPointでの置換・再編集は未確認。代替が必要なら役割を保って記録し、実際の描画で再確認する。フォントを追加導入しない。LibreOfficeプレビューとPowerPoint本体の描画には差があり得る。
 
 通常版はルートplugin.jsonと.agents/plugins/marketplace.jsonでCodex／ChatGPTデスクトップのローカルプラグインとして登録できる。.codex-plugin/plugin.jsonも互換用に維持する。Claude Codeは.claude-plugin/plugin.jsonと.claude-plugin/marketplace.jsonを入口にする。プラグインとして導入した場合は同じSkillを作業フォルダーにも重複登録しない。Gemini CLIはgemini-extension.jsonを入口にする。GitHub CopilotはVS CodeのAgentモードを対象とし、setup_workspace.py --host copilotで.github/skills/decksmithへ共通Skill全体を配置する。候補に出ない場合はSKILL.mdを直接指定する。既存の.agents/.claude配置も認識されるため同名Skillの重複登録を避ける。根拠: https://code.visualstudio.com/docs/agent-customization/agent-skills 。PORTABLE版では配置コピーせず展開先のSKILL.mdとdecksmith.cmdを直接指定する。Gemini CLIの実利用は未検証。ブラウザー版Geminiは対象外。ブラウザー版Claude／ChatGPTは[ブラウザー試験](browser-trial.md)に従う任意の試験対象で、正式対応ではない。
 

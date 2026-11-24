@@ -163,7 +163,7 @@ def validate_mapping(plan, content, scene):
             raise SpecError('Unresolved source mapping')
         if item['text'].strip():
             after = text(mapping.get('after'), 'mapping.after')
-            actual = '\n'.join(text_content(targets[t]) for t in mapped if targets[t]['type'] in ('text', 'notes'))
+            actual = '\n'.join(text_content(targets[t]) for t in mapped if targets[t]['type'] in ('text', 'notes', 'table', 'chart'))
             if after not in actual:
                 raise SpecError('Mapped text does not exist at its output targets')
             if status == 'preserved' and after != item['text']:

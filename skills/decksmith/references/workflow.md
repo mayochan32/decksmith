@@ -28,6 +28,8 @@ prepareのpolicyは許可条件の記録であって、実施済み・承認済�
 
 プロンプトだけの場合も原文をローカルに保存する。content-contract.jsonは原稿指紋と必須文字列を保持し、既存基準を上書きしない。原稿のどの主張・数値・条件に対応するかtext-plan.mdに記録。sceneの全テキストから基準を作ると検査が循環するため禁止。
 
+新規の表・グラフは、原稿から整理したstructure.slides[].evidenceも同時に固定する。項目・系列・元の数値・単位や表の全セルを、sceneとは独立に保持する。表示を丸めても元データの変更は検出する。データを訂正するときは原稿上の根拠と新しい制作基準を用意し、古い契約を書き換えて検査を通さない。
+
 後から言い換え・翻訳する場合はcontent-changes.jsonへ `{"changes":[{"slide":"s01","original":"元の必須文字列","replacement":"変更後","reason":"変更理由","source_evidence":"原稿上の根拠"}]}` を記録する。意味の変更・削除には人間の確認も必要。元基準は消さない。原稿自体が変わる場合は新しい制作フォルダーで再解釈・基準作成し、指紋だけ更新しない。
 
 buildは必須文字列（または根拠付き置換後）が編集可能テキストに残るか検査する。意味の同等性は自動判定しない。review.jsonのsource_content_evidenceに原稿・基準・変更記録を独立に照合した結果を残す。
@@ -36,15 +38,19 @@ AIが作った要約の文言を、利用者が指定した引用・必須文と
 
 ## 代表ページの試作
 
+新規制作では、[代表ページと反復](design-plan.md#代表ページと反復)の順に、全ページのsceneを作る前に独立した試作A/Bを作る。以下のprototypeコマンドは既存のsceneから取り出す補助機能であり、先行設計の代わりではない。
+
 `prototype --project <project> --config decksmith.resolved.yaml --destination prototype-01 --slides opening comparison`
 
 scene/structure/design-plan/style、必要画像、独立基準を新規フォルダーへ取り出す。参照・順序・指紋を整合させ、本番は変更しない。試作外の要件はblockedとし試作だけで完成扱いしない。試作側を `build --draft` で生成する。別の試作は別フォルダーへ。この操作は通信の許可を与えない。
 
 ## 修正後の比較・納品
 
-`compare --project <project> --previous ../output/deck.pptx --output ../output/deck-002.pptx`
+`compare --project <project> --previous ../output/deck.pptx --output ../output/deck-002.pptx --board ../output/comparison.html`
 
 通常版workflow.pyのcompareは--project不要（パスを直接指定）。PPTXとPNGの指紋を照合しchanged/unchanged/removedを返す。changedは個別に再確認、unchangedは同一画像の確認記録を引き継げるが、全体の順序・内容・スタイル要件は再確認する。自動でpassedにしない。
+
+--boardは任意。同じスライドIDのPNGをA/Bで並べた自己完結HTMLを新規保存する。画像を埋め込むためネット接続や元画像へのリンクは不要。異なる案の構図比較にも使える。既存HTMLは上書きしない。PNGがないnone出力では利用できない。比較資料に元の原稿や素材の使用許可が追加されるわけではない。
 
 レビュー対象はbuildが返したoutputを使用し、連番最大だから完成と判断しない。review結果を確認しDELIVERY.mdへ納品対象を明記する。policy記録がある場合はreview.jsonのpolicy_evidenceへ実際の利用と承認の照合結果を書く。プレースホルダー納品はdelivery_status=awaiting_imagesとし、review結果もawaiting_images。noneは見た目未確認のまま。
 

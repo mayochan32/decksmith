@@ -1,4 +1,6 @@
 import copy
+import base64
+from html.parser import HTMLParser
 import json
 from pathlib import Path
 import sys
@@ -158,3 +160,55 @@ class Helpers(unittest.TestCase):
             self.assertIn('/bundle/runtime/python/python.exe',cmd)
             self.assertIn('/bundle/skills/decksmith/scripts/workflow.py',cmd)
             self.assertIn(action,cmd)
+
+    def test_comparison_board_embeds_verified_images_and_preserves_inputs(self):
+        fixture=design_fixtures.WorkflowTests();fixture.base=self.p
+        output,manifest,review=fixture.fixture_review()
+        image=self.p/'deck.preview/slide-01.png'
+        original=output.read_bytes();original_image=image.read_bytes()
+        board=self.p/'comparison.html'
+        result=compare(output,output,board)
+        self.assertEqual(result['unchanged'],['s'])
+        self.assertEqual(result['board'],str(board.resolve()))
+        class Sources(HTMLParser):
+            def __init__(self):super().__init__();self.sources=[]
+            def handle_starttag(self,tag,attrs):
+                if tag=='img':self.sources.append(dict(attrs)['src'])
+        parser=Sources();parser.feed(board.read_text(encoding='utf-8'))
+        self.assertEqual(len(parser.sources),2)
+        for uri in parser.sources:
+            self.assertTrue(uri.startswith('data:image/png;base64,'))
+            self.assertEqual(base64.b64decode(uri.split(',',1)[1]),original_image)
+        self.assertEqual(output.read_bytes(),original)
+        self.assertEqual(image.read_bytes(),original_image)
+        before=board.read_bytes()
+        with self.assertRaises(FileExistsError):compare(output,output,board)
+        self.assertEqual(board.read_bytes(),before)
+
+    def test_comparison_board_rejects_stale_preview_without_writing(self):
+        fixture=design_fixtures.WorkflowTests();fixture.base=self.p
+        output,manifest,review=fixture.fixture_review()
+        (self.p/'deck.preview/slide-01.png').write_bytes(b'changed')
+        board=self.p/'comparison.html'
+        with self.assertRaisesRegex(SpecError,'Preview changed'):compare(output,output,board)
+        self.assertFalse(board.exists())
+
+    def test_comparison_board_escapes_labels_and_rejects_duplicate_ids(self):
+        fixture=design_fixtures.WorkflowTests();fixture.base=self.p
+        output,manifest,review=fixture.fixture_review()
+        manifest['slides'][0]['id']='<script>alert(1)</script>'
+        self.write('deck.preview/review-manifest.json',manifest)
+        board=self.p/'comparison.html';compare(output,output,board)
+        html=board.read_text(encoding='utf-8')
+        self.assertNotIn('<script>',html)
+        self.assertIn('&lt;script&gt;',html)
+        manifest['slides'].append(dict(manifest['slides'][0]))
+        self.write('deck.preview/review-manifest.json',manifest)
+        with self.assertRaisesRegex(SpecError,'Duplicate slide'):compare(output,output,self.p/'invalid.html')
+        self.assertFalse((self.p/'invalid.html').exists())
+
+    def test_portable_routes_comparison_board_relative_to_project(self):
+        args=argparse.Namespace(action='compare',project=self.p,renderer=None,
+            previous=Path('../output/a.pptx'),output=Path('../output/b.pptx'),board=Path('../output/compare.html'))
+        cmd,_=launcher.command(Path('/bundle'),args)
+        self.assertEqual(cmd[cmd.index('--board')+1],str((self.p/'../output/compare.html').resolve()))

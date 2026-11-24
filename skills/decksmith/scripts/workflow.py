@@ -1,10 +1,13 @@
 """Local workflow helpers. Never authorize network use or manufacture reviews."""
 import argparse
+import base64
 import copy
+import hashlib
+from html import escape
 import json
 from pathlib import Path
 import shutil
-from compile_spec import SpecError, load_mapping, source_hash, compact, text_content, text
+from compile_spec import SpecError, load_mapping, source_hash, compact, text_content, text, source_evidence, check_evidence
 from project_config import resolve_config
 
 
@@ -113,11 +116,13 @@ def freeze(project, structure_path=None, brief_path=None):
         if not slide.get('required_text'):
             raise SpecError('Each slide needs required_text before freezing')
         for value in slide['required_text']: text(value, 'required_text')
+        source_evidence(slide.get('evidence', []))
     brief = Path(brief_path or project / 'brief.md').resolve()
     if not brief.is_file():
         raise SpecError('Save the supplied brief/prompt locally before freezing content')
     contract = {'source':str(brief), 'source_sha256':source_hash(brief),
-                'slides':[{'id':s['id'], 'required_text':s['required_text']} for s in slides]}
+                'slides':[{'id':s['id'], 'required_text':s['required_text'],
+                           **({'evidence':copy.deepcopy(s['evidence'])} if 'evidence' in s else {})} for s in slides]}
     dest = project / 'content-contract.json'
     save_new(dest, contract)
     return {'contract':str(dest), 'sha256':source_hash(dest)}
@@ -144,13 +149,14 @@ def check_content(project, scene):
     expected = {(s['id'], t) for s in contract['slides'] for t in s['required_text']}
     if not seen <= expected: raise SpecError('Unknown content change target')
     for original, rendered in zip(contract['slides'], scene['slides']):
-        native = compact(''.join(text_content(e) for e in rendered['elements'] if e['type']=='text'))
+        native = compact(''.join(text_content(e) for e in rendered['elements'] if e['type'] in ('text','table','chart')))
         for required in original['required_text']:
             value = next((c['replacement'] for c in changes if (c['slide'],c['original'])==(original['id'],required)), required)
             if compact(value) not in native:
                 raise SpecError(original['id'] + ': missing independent content requirement: ' + value)
+        check_evidence(rendered, original.get('evidence', []))
     return {'baseline':contract, 'changes':changes,
-            'assurance':'literal retention only; semantic equivalence and source coverage require review'}
+            'assurance':'literal text and declared evidence data retention; semantic equivalence and source coverage require review'}
 
 
 def prototype(project, destination, ids, config_path=None):
@@ -208,7 +214,7 @@ def prototype(project, destination, ids, config_path=None):
     return {'project':str(destination),'draft_required':True,'slides':[s['id'] for s in scene['slides']]}
 
 
-def compare(first, second):
+def compare(first, second, board=None):
     def read(output):
         folder=Path(output).with_suffix('.preview')
         manifest=load_mapping(folder/'review-manifest.json')
@@ -218,13 +224,50 @@ def compare(first, second):
             name=s['preview']
             if not name: raise SpecError('Cannot compare without rendered previews')
             if Path(name).name!=name: raise SpecError('Invalid preview filename')
-            digest=source_hash(folder/name)
+            data=(folder/name).read_bytes()
+            digest=hashlib.sha256(data).hexdigest()
             if digest!=manifest['preview_sha256'][name]: raise SpecError('Preview changed since rendering')
-            result[s['id']]=digest
+            if s['id'] in result: raise SpecError('Duplicate slide ID in preview manifest')
+            # Keep the bytes that were actually verified, including when making a board.
+            result[s['id']]={'sha256':digest}
+            if board is not None:result[s['id']]['data']=data
         return result
     a,b=read(first),read(second)
-    return {'changed':[s for s in b if b[s]!=a.get(s)],'unchanged':[s for s in b if b[s]==a.get(s)],
+    result={'changed':[s for s in b if s not in a or b[s]['sha256']!=a[s]['sha256']],
+            'unchanged':[s for s in b if s in a and b[s]['sha256']==a[s]['sha256']],
             'removed':[s for s in a if s not in b], 'assurance':'pixel identity only; not automatic review approval'}
+    if board is not None:
+        destination=Path(board)
+        if destination.suffix.lower()!='.html': raise SpecError('Comparison board must be an HTML file')
+        rows=[]
+        for sid in [*b, *(s for s in a if s not in b)]:
+            cells=[]
+            for label, pages, output in (('A',a,first),('B',b,second)):
+                caption=escape(label+' / '+Path(output).name)
+                if sid in pages:
+                    uri='data:image/png;base64,'+base64.b64encode(pages[sid]['data']).decode('ascii')
+                    content='<img alt="'+escape(sid,quote=True)+'" src="'+uri+'">'
+                else: content='<p class="missing">この版にはありません</p>'
+                cells.append('<figure><figcaption>'+caption+'</figcaption>'+content+'</figure>')
+            rows.append('<section><h2>'+escape(sid)+'</h2><div class="pair">'+''.join(cells)+'</div></section>')
+        document='''<!doctype html><html lang="ja"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DeckSmith 構図の比較</title><style>
+body{margin:0;padding:24px;background:#ededeb;color:#202020;font-family:system-ui,sans-serif}
+main{max-width:1800px;margin:auto}h1{font-size:24px}h2{font-size:18px;margin:24px 0 8px}
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+figure{margin:0;min-width:0}figcaption{padding:8px 0;font-size:14px;overflow-wrap:anywhere}
+img{display:block;width:100%;height:auto;background:white}.missing{padding:48px;background:white}
+@media(max-width:700px){.pair{grid-template-columns:1fr}body{padding:12px}}
+@media print{section{break-inside:avoid}body{background:white}}
+</style><main><h1>構図の比較</h1>
+<p>画像は生成記録と照合済みです。比較資料の作成は、デザイン品質の合格を意味しません。</p>
+<p>画面から何がわかるか、どこを見れば根拠や条件が読めるかを比べてください。</p>
+'''+''.join(rows)+'</main></html>'
+        destination.parent.mkdir(parents=True,exist_ok=True)
+        with destination.open('x',encoding='utf-8') as stream:stream.write(document)
+        result['board']=str(destination.resolve())
+    return result
 
 
 def main():
@@ -241,9 +284,10 @@ def main():
             command.add_argument('--structure',type=Path);command.add_argument('--brief',type=Path)
         if name=='prototype':command.add_argument('--slides',nargs='+',required=True)
     command=sub.add_parser('compare');command.add_argument('--previous',type=Path,required=True);command.add_argument('--output',type=Path,required=True)
+    command.add_argument('--board',type=Path,help='Write a self-contained side-by-side HTML review board')
     a=p.parse_args()
     try:
-        if a.action=='compare':result=compare(a.previous,a.output)
+        if a.action=='compare':result=compare(a.previous,a.output,a.board)
         else:
             project=a.project.resolve()
             def local(v):return (project/v).resolve() if v else None

@@ -41,7 +41,7 @@ def command(root, args):
     if args.action in ('prepare','freeze-content','prototype','compare'):
         cmd += [str(scripts / 'workflow.py'), args.action]
         if args.action != 'compare': cmd += ['--project',str(project)]
-        for key in ('config','destination','structure','brief','previous','output'):
+        for key in ('config','destination','structure','brief','previous','output','board'):
             value=getattr(args,key,None)
             if value: cmd += ['--'+key,str(at_project(value))]
         for key in ('image_capability','source_evidence'):
@@ -142,7 +142,7 @@ def main():
     parser.add_argument('action', nargs='?', choices=('init', 'doctor', 'validate', 'build', 'review','prepare','freeze-content','prototype','compare','inspect-source','restyle'))
     parser.add_argument('--project', type=Path, default=Path.cwd())
     parser.add_argument('--renderer', choices=('none', 'powerpoint'))
-    for name in ('config', 'scene', 'structure', 'style', 'output', 'design-plan', 'review','destination','brief','previous','source','plan','pdf-font-map'):
+    for name in ('config', 'scene', 'structure', 'style', 'output', 'design-plan', 'review','destination','brief','previous','board','source','plan','pdf-font-map'):
         parser.add_argument('--' + name, type=Path)
     parser.add_argument('--slides',nargs='+')
     parser.add_argument('--image-capability',choices=('available','unavailable','unverified'))
@@ -161,7 +161,7 @@ def main():
         'prepare': {'project','config','destination','image_capability','source_evidence'},
         'freeze-content': {'project','structure','brief'},
         'prototype': {'project','config','destination','slides'},
-        'compare': {'project','previous','output'},
+        'compare': {'project','previous','output','board'},
         'inspect-source': common | {'config','source','style','destination','mode','pdf_font_map'},
         'restyle': common | {'config','source','style','plan','output','draft','next_output','mode'},
     }

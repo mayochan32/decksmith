@@ -41,14 +41,17 @@ slides:
         bold: true
 ```
 
-すべての座標とサイズは96DPIのpx。キャンバスを固定しない。elementsの順番が背面から前面への重なり順。全要素の共通項目はid/type/x/y/width/height。任意でrotation（度）、overflow_reason（意図的なはみ出しの説明）。
+すべての座標とサイズは96DPIのpx。キャンバスを固定しない。elementsの順番が背面から前面への重なり順。connector以外の共通項目はid/type/x/y/width/height。任意でrotation（度）、overflow_reason（意図的なはみ出しの説明）。connectorは接続先から位置を計算する。
 
 - text: textまたはrunsの片方。font/size/colorが必須。bold/italic/align（left/center/right/justify）/vertical（top/middle/bottom）/line_spacing/trackingが任意。trackingはpx単位の字間加算（負値で詰める）。runsは{text, font?, size?, color?, bold?, italic?, tracking?}の配列。roleはdisplay/heading/body/caption/label。design-planがある場合は全textに定義済みroleが必要。自動縮小しない。
 - shape: geometryはrect/roundRect/ellipse/line/triangle/rightArrow。fill/strokeは#RRGGBB、#RRGGBBAAまたはnone。stroke_width/radiusはpx。水平線は高さを小さい正数にする。
-- path: pointsは要素のローカル座標の[x,y]配列。closed、fill、stroke、stroke_widthが任意。正確な関係線・編集可能な図解のための機能。
+- path: pointsは要素のローカル座標の[x,y]配列。closed、fill、stroke、stroke_widthが任意。開いた線にはstart_arrow/end_arrowでnone/triangle/arrow/stealth/diamond/ovalを指定できる。矢印はネイティブな線の端として描画し、別の三角形を手作業で合わせる必要はない。
+- connector: from/toで同じページの要素IDと接続する辺を指定。strokeが必須。線と条件ラベルを文字・図形を避けて配置する。詳細は[接続線の設計](connector-routing.md)。出力は編集可能なpath/textへ展開する。
 - image: scene.yamlのディレクトリ内の相対path、altが必須。PNG/JPEG。WebP等は事前にPNGへ変換する。fitはcontain（既定）またはcover。promptを記録可能。回転は共通のrotationを使う。
+- table: 編集可能なネイティブ表。headers/rows、font/size/colorと元データが必要。列幅・行高・セルの強調を指定できる。
+- chart: 編集可能な横棒・縦棒・折れ線グラフ。categories/series/unit、font/size/color/colorsと元データが必要。編集用ブックを埋め込む。table/chartのデータと配置、表示形式の詳細は[数値と条件の設計](native-evidence.md)を読む。
 
-未知のキー/要素はエラー。表やグラフの専用要素、クリッピングマスク、グループ変換はこの初期アダプターでは未実装。要求された場合は対応を追加する。黙って無視しない。グループ相当の配置は各要素の明示座標で表現できる。
+未知のキー/要素はエラー。クリッピングマスク、グループ変換、対応範囲外の表・グラフ機能は未実装。要求された場合は対応を追加する。黙って無視しない。グループ相当の配置は各要素の明示座標で表現できる。table/chartは回転を受け付けない。新規の元データはstructure.slides[].evidenceへ記録し、sceneから逆生成しない。
 
 requirementsはstyle.yamlのすべての末端値を重複なく網羅する。not_applicableの場合はreasonを記録し、AIが妥当性を確認する。ソース指紋と台帳は追跡可能性のためであり、AIによる意味理解の正しさを自動保証しない。
 

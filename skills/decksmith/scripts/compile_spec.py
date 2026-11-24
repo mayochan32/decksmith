@@ -6,6 +6,7 @@ import re
 import json
 import importlib.util
 import sys
+from decimal import Decimal, ROUND_HALF_UP, localcontext
 from pathlib import Path
 
 class SpecError(ValueError):
@@ -70,7 +71,194 @@ def color(value, where):
         raise SpecError(f"{where}: expected hex color or none")
 
 def text_content(e):
+    if e.get('type') == 'table':
+        return '\n'.join('\t'.join(row) for row in [e['headers'], *e['rows']])
+    if e.get('type') == 'chart':
+        # Required visible text is distinct from data kept only in the workbook.
+        labels = [*e['categories'], e['unit']]
+        if e.get('show_legend', len(e['series']) > 1):
+            labels.extend(s['name'] for s in e['series'])
+        if e.get('show_values', True):
+            labels.extend(chart_value(v, e.get('number_format', 'General'))
+                          for s in e['series'] for v in s['values'])
+        return '\n'.join(labels)
     return e["text"] if "text" in e else "".join(r["text"] for r in e.get("runs",[]))
+
+
+CHART_FORMATS = ('General', '0', '0.0', '0.00', '#,##0', '#,##0.0', '#,##0.00',
+                 '0%', '0.0%', '0.00%')
+
+
+def chart_value(value, number_format):
+    if number_format == 'General':
+        return format(value, '.15g')
+    percent = number_format.endswith('%')
+    pattern = number_format.rstrip('%')
+    places = len(pattern.split('.')[1]) if '.' in pattern else 0
+    number = Decimal(str(value)) * (100 if percent else 1)
+    with localcontext() as context:
+        context.prec = max(28, len(number.as_tuple().digits)+abs(number.as_tuple().exponent)+places+4)
+        number = number.quantize(Decimal(1).scaleb(-places), rounding=ROUND_HALF_UP)
+    formatted = format(number, (',' if ',' in pattern else '') + '.' + str(places) + 'f')
+    return formatted + ('%' if percent else '')
+
+
+def opaque(value, where):
+    color(value, where)
+    if not isinstance(value, str) or len(value) != 7:
+        raise SpecError(where + ': native evidence color must be #RRGGBB')
+
+
+def table_data(e):
+    eid = e['id']; headers, rows = e.get('headers'), e.get('rows')
+    if not isinstance(headers, list) or not headers:
+        raise SpecError(eid + ': table needs headers')
+    for value in headers: text(value, eid + '.header')
+    if not isinstance(rows, list) or not rows:
+        raise SpecError(eid + ': table needs data rows')
+    if any(not isinstance(row, list) or len(row) != len(headers)
+           or any(not isinstance(cell, str) for cell in row) for row in rows):
+        raise SpecError(eid + ': table rows must contain one string per header; no truncation')
+    return headers, rows
+
+
+def chart_data(e):
+    eid = e['id']; categories, series = e.get('categories'), e.get('series')
+    if not isinstance(categories, list) or not categories:
+        raise SpecError(eid + ': chart needs categories')
+    for value in categories: text(value, eid + '.category')
+    if not isinstance(series, list) or not series:
+        raise SpecError(eid + ': chart needs series')
+    values = []
+    for item in series:
+        keys(item, 'name values', eid + '.series')
+        text(item.get('name'), eid + '.series.name')
+        if not isinstance(item.get('values'), list) or len(item['values']) != len(categories):
+            raise SpecError(eid + ': series values must match all categories')
+        for value in item['values']: number(value, eid + '.value')
+        if any(type(value) is int and abs(value) > 9007199254740991 for value in item['values']):
+            raise SpecError(eid + ': chart integer exceeds the exact JavaScript range; use appropriate source units')
+        values.extend(item['values'])
+    text(e.get('unit'), eid + '.unit')
+    return categories, series, values
+
+
+def evidence_data(e):
+    fields = ('type','headers','rows') if e['type']=='table' else ('type','categories','series','unit')
+    return {key:e[key] for key in fields}
+
+
+def source_evidence(items):
+    if not isinstance(items, list): raise SpecError('Source evidence must be a list')
+    result = {}
+    for item in items:
+        if not isinstance(item, dict) or item.get('type') not in ('table','chart'):
+            raise SpecError('Source evidence must be a table or chart data record')
+        fields = 'headers rows' if item['type']=='table' else 'categories series unit'
+        keys(item, 'id type '+fields, 'source evidence')
+        eid = text(item.get('id'), 'source evidence.id')
+        if eid in result: raise SpecError('Duplicate source evidence ID')
+        table_data(item) if item['type']=='table' else chart_data(item)
+        result[eid] = evidence_data(item)
+    return result
+
+
+def check_evidence(slide, items):
+    sources = source_evidence(items); seen = set()
+    for element in slide['elements']:
+        if element['type'] not in ('table','chart'): continue
+        eid = element.get('evidence_id', element['id'])
+        if eid not in sources: raise SpecError('Native evidence needs independent source data: '+str(eid))
+        if evidence_data(element) != sources[eid]:
+            raise SpecError('Native evidence differs from independent source data: '+eid)
+        seen.add(eid)
+    if seen != set(sources): raise SpecError('Source evidence was not retained as native objects')
+
+
+def native_evidence(e):
+    eid = e['id']
+    text(e.get('font'), eid + '.font')
+    number(e.get('size'), eid + '.size', 1)
+    opaque(e.get('color'), eid + '.color')
+    if 'evidence_id' in e: text(e['evidence_id'], eid + '.evidence_id')
+    if e.get('rotation', 0) != 0:
+        raise SpecError(eid + ': native tables/charts do not support rotation')
+    if 'role' in e and e['role'] not in ('display','heading','body','caption','label'):
+        raise SpecError(eid + ': invalid text role')
+    if e['type'] == 'table':
+        headers, rows = table_data(e)
+        for name, count, extent in (('column_widths', len(headers), 'width'),
+                                     ('row_heights', len(rows)+1, 'height')):
+            if name in e:
+                values = e[name]
+                if not isinstance(values, list) or len(values) != count:
+                    raise SpecError(eid + ': invalid ' + name)
+                for value in values: number(value, eid + '.' + name, 0.01)
+                if abs(sum(values) - e[extent]) > 0.01:
+                    raise SpecError(eid + ': ' + name + ' must sum to ' + extent)
+        for name in ('fill','header_fill','header_color','border_color'):
+            if name in e: opaque(e[name], eid + '.' + name)
+        for name in ('padding','border_width'):
+            if name in e: number(e[name], eid + '.' + name, 0)
+        if e.get('border_mode', 'all') not in ('all', 'horizontal', 'none'):
+            raise SpecError(eid + ': border_mode must be all, horizontal or none')
+        if 'column_alignments' in e and (not isinstance(e['column_alignments'], list)
+                or len(e['column_alignments']) != len(headers)
+                or any(v not in ('left','center','right') for v in e['column_alignments'])):
+            raise SpecError(eid + ': invalid column_alignments')
+        highlights = e.get('highlights', [])
+        if not isinstance(highlights, list): raise SpecError(eid + ': highlights must be a list')
+        seen = set()
+        for cell in highlights:
+            keys(cell, 'row column fill color bold', eid + '.highlight')
+            for name, count in (('row',len(rows)+1), ('column',len(headers))):
+                if type(cell.get(name)) is not int or not 0 <= cell[name] < count:
+                    raise SpecError(eid + ': invalid highlight ' + name)
+            target = (cell['row'], cell['column'])
+            if target in seen: raise SpecError(eid + ': duplicate cell highlight')
+            seen.add(target)
+            for name in ('fill','color'):
+                if name in cell: opaque(cell[name], eid + '.highlight.' + name)
+            if 'bold' in cell and type(cell['bold']) is not bool:
+                raise SpecError(eid + ': highlight bold must be boolean')
+    else:
+        if e.get('chart_type') not in ('bar','column','line'):
+            raise SpecError(eid + ': supported chart types are bar, column, line')
+        categories, series, values = chart_data(e)
+        if e.get('number_format', 'General') not in CHART_FORMATS:
+            raise SpecError(eid + ': unsupported number_format')
+        colors = e.get('colors')
+        if not isinstance(colors, list) or len(colors) != len(series):
+            raise SpecError(eid + ': colors must cover all series')
+        for value in colors: opaque(value, eid + '.series color')
+        highlights = e.get('highlights', [])
+        if not isinstance(highlights, list): raise SpecError(eid + ': chart highlights must be a list')
+        if highlights and e['chart_type'] not in ('bar', 'column'):
+            raise SpecError(eid + ': point highlights require bar or column')
+        seen = set()
+        for point in highlights:
+            keys(point, 'series category color', eid + '.chart highlight')
+            for name, count in (('series', len(series)), ('category', len(categories))):
+                if type(point.get(name)) is not int or not 0 <= point[name] < count:
+                    raise SpecError(eid + ': invalid chart highlight ' + name)
+            target = (point['series'], point['category'])
+            if target in seen: raise SpecError(eid + ': duplicate chart point highlight')
+            seen.add(target)
+            opaque(point.get('color'), eid + '.chart highlight.color')
+        for name in ('fill','grid_color'):
+            if name in e: opaque(e[name], eid + '.' + name)
+        for name in ('show_values','show_legend'):
+            if name in e and type(e[name]) is not bool:
+                raise SpecError(eid + ': ' + name + ' must be boolean')
+        for name in ('axis_min','axis_max','axis_step'):
+            if name in e: number(e[name], eid + '.' + name)
+        if e.get('axis_step', 1) <= 0: raise SpecError(eid + ': axis_step must be positive')
+        if e.get('axis_min', min(values)) > min(values) or e.get('axis_max', max(values)) < max(values):
+            raise SpecError(eid + ': axis must include all data values')
+        if 'axis_min' in e and 'axis_max' in e and e['axis_min'] >= e['axis_max']:
+            raise SpecError(eid + ': axis_min must be below axis_max')
+        if e['chart_type'] in ('bar','column') and (e.get('axis_min', 0) > 0 or e.get('axis_max', 0) < 0):
+            raise SpecError(eid + ': bar/column axis must include zero')
 
 def compact(value):
     return re.sub(r"\s+","",value)
@@ -78,8 +266,11 @@ def compact(value):
 TYPES = {
     "text":"text runs font size color bold italic align vertical line_spacing tracking role",
     "shape":"geometry fill stroke stroke_width radius",
-    "path":"points closed fill stroke stroke_width",
+    "path":"points closed fill stroke stroke_width start_arrow end_arrow",
+    "connector":"from to stroke stroke_width clearance avoid via start_arrow end_arrow label",
     "image":"path alt fit prompt",
+    "table":"evidence_id headers rows column_widths row_heights font size color role fill header_fill header_color border_color border_width border_mode padding column_alignments highlights",
+    "chart":"evidence_id chart_type categories series unit font size color role colors fill grid_color number_format show_values show_legend axis_min axis_max axis_step highlights",
 }
 
 def compile_scene(scene_path, style_path, structure_path, allow_draft=False, native_content=None):
@@ -101,12 +292,13 @@ def compile_scene(scene_path, style_path, structure_path, allow_draft=False, nat
         raise SpecError("structure.slides must be non-empty")
     content_ids = []
     for item in contents:
-        keys(item,"id purpose required_text notes citations","content slide")
+        keys(item,"id purpose required_text notes citations evidence","content slide")
         content_ids.append(text(item.get("id"),"content id"))
         if not isinstance(item.get("required_text"),list) or not item["required_text"]:
             raise SpecError("Each content slide needs required_text")
         for value in item["required_text"]:
             text(value,"required_text")
+        source_evidence(item.get('evidence', []))
     if len(set(content_ids)) != len(content_ids):
         raise SpecError("Duplicate content slide IDs")
     slides = scene.get("slides")
@@ -121,6 +313,11 @@ def compile_scene(scene_path, style_path, structure_path, allow_draft=False, nat
         elements = slide.get("elements")
         if not isinstance(elements,list) or not elements:
             raise SpecError(f"{sid}: elements must be non-empty")
+        if any(isinstance(e, dict) and e.get('type') == 'connector' for e in elements):
+            from connector_routing import lower_connectors
+            elements, routes = lower_connectors(elements, canvas)
+            slide['elements'] = elements
+            scene.setdefault('connector_routes', {})[sid] = routes
         element_ids = set()
         for e in elements:
             if not isinstance(e,dict) or e.get("type") not in TYPES:
@@ -164,6 +361,8 @@ def compile_scene(scene_path, style_path, structure_path, allow_draft=False, nat
                         if "color" in run: color(run["color"],eid+".run.color")
                         if "tracking" in run: number(run["tracking"],eid+".run.tracking")
                 text(text_content(e),eid+".text")
+            elif kind in ('table','chart'):
+                native_evidence(e)
             elif kind == "image":
                 raw=Path(text(e.get("path"),eid+".path"))
                 base=Path(scene_path).resolve().parent
@@ -191,11 +390,18 @@ def compile_scene(scene_path, style_path, structure_path, allow_draft=False, nat
                         if not isinstance(point,list) or len(point)!=2:
                             raise SpecError(f"{eid}: invalid point")
                         for v in point: number(v,eid+".point")
-        native=compact("".join(text_content(e) for e in elements if e["type"]=="text")
+                    if 'start_arrow' in e or 'end_arrow' in e:
+                        from connector_routing import ARROWS
+                        if any(e.get(field, 'none') not in ARROWS for field in ('start_arrow', 'end_arrow')):
+                            raise SpecError(eid + ': invalid arrow type')
+                        if e.get('closed') or e.get('stroke', 'none') == 'none' or not e.get('stroke_width', 0):
+                            raise SpecError(eid + ': native arrows need an open stroked path')
+        native=compact("".join(text_content(e) for e in elements if e["type"] in ('text','table','chart'))
                        + (native_content or {}).get(sid, ''))
         for required in content["required_text"]:
             if compact(required) not in native:
                 raise SpecError(f"{sid}: missing editable content {required!r}")
+        check_evidence(slide, content.get('evidence', []))
         slide["notes"]="\n".join(filter(None,[content.get("notes",""),slide.get("notes",""),
             *("Source: "+str(c) for c in content.get("citations",[]))]))
     requirements=scene.get("requirements")

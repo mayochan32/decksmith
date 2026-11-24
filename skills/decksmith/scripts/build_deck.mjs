@@ -2,6 +2,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createRequire } from "node:module";
+import { addEvidence } from "./build_evidence.mjs";
 const require = process.env.DECKSMITH_NODE_MODULES
   ? createRequire(path.join(path.resolve(process.env.DECKSMITH_NODE_MODULES), "__decksmith__.cjs"))
   : createRequire(import.meta.url);
@@ -40,6 +41,8 @@ for (const data of spec.slides) {
         align:e.align??"left",valign:e.vertical??"top",lineSpacingMultiple:e.line_spacing??1.05,
         paraSpaceAfterPt:0,paraSpaceBeforePt:0,fit:"none",isTextBox:true,
       });
+    } else if (e.type==="table" || e.type==="chart") {
+      addEvidence(deck, slide, e, box, data.background);
     } else if (e.type==="image") {
       const ext=path.extname(e.path).toLowerCase();
       if (![".png",".jpg",".jpeg"].includes(ext)) throw new Error("Portable images require PNG or JPEG: "+e.id);
@@ -60,6 +63,8 @@ for (const data of spec.slides) {
       if (e.type==="path") {
         geometry="custGeom";
         opts.points=e.points.map(([x,y])=>({x:x/96,y:y/96})).concat(e.closed?[{close:true}]:[]);
+        if (e.start_arrow !== undefined) opts.line.beginArrowType=e.start_arrow;
+        if (e.end_arrow !== undefined) opts.line.endArrowType=e.end_arrow;
       } else if (e.radius!==undefined) {
         if (!["rect","roundRect"].includes(e.geometry)) throw new Error("Radius only supported on rectangles");
         geometry=e.radius ? "roundRect":"rect"; opts.rectRadius=e.radius/96;

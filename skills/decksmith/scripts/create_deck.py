@@ -10,6 +10,7 @@ import tempfile
 from xml.sax.saxutils import escape
 from compile_spec import SpecError, compile_scene, source_hash
 from validate_pptx import validate_pptx
+from evidence_workbook import normalize_chart_workbooks
 from project_config import resolve_config
 from version import read_version
 from process_environment import child_environment, announce_repair, powershell_path
@@ -188,7 +189,9 @@ def main():
         spec=work/"scene.json"; spec.write_text(json.dumps(scene,ensure_ascii=False),encoding="utf-8")
         candidate=work/"candidate.pptx"
         run([node,str(builder),"--spec",str(spec),"--output",str(candidate)])
+        native_records=normalize_chart_workbooks(candidate,scene)
         receipt=validate_pptx(candidate,scene)
+        if native_records: receipt['native_workbooks']=native_records
         if renderer == "libreoffice":
             rendered=preview(candidate,work,scene,**runtime)
         elif renderer == "powerpoint":

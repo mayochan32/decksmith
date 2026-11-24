@@ -4,6 +4,10 @@ No style presets; these checks cannot judge semantic or aesthetic quality.
 """
 from compile_spec import SpecError, load_mapping, number, text
 from layout_balance import check_balance_groups, inspect_balance
+from text_geometry import inspect_text_geometry, inspect_connector_labels
+from editorial_quality import check_editorial_links, reading_outline, repetitions
+from line_conflicts import inspect_line_conflicts
+from text_visibility import inspect_text_visibility
 
 
 def check_plan(path, scene):
@@ -42,9 +46,10 @@ def check_plan(path, scene):
         for key in ('focal_reason', 'composition', 'asset_decision'):
             text(planned.get(key), 'design slide.' + key)
         for element in actual['elements']:
-            if element['type'] == 'text' and element.get('role') not in roles:
+            if element['type'] in ('text','table','chart') and element.get('role') not in roles:
                 raise SpecError('Every planned text element needs a defined role: ' + element['id'])
         check_balance_groups(planned, actual)
+        check_editorial_links(planned, actual)
     representatives = plan.get('representative_slides')
     ids = {s['id'] for s in scene['slides']}
     if (not isinstance(representatives, list) or not representatives
@@ -57,6 +62,11 @@ def check_plan(path, scene):
 def inspect_design(scene, plan=None):
     warnings = []
     balance_measurements = []
+    text_measurements = []
+    connector_label_measurements = []
+    repeated_explanations = []
+    line_conflicts = []
+    text_visibility = []
     height = scene['canvas']['height']
     roles = plan['typography'] if plan else {}
     planned_slides = {s['id']: s for s in plan['slides']} if plan else {}
@@ -64,7 +74,7 @@ def inspect_design(scene, plan=None):
         warnings.append({'id': 'design-plan-missing', 'message': 'Legacy build: design direction has not been recorded.'})
     for slide in scene['slides']:
         for element in slide['elements']:
-            if element['type'] != 'text':
+            if element['type'] not in ('text','table','chart'):
                 continue
             target = slide['id'] + '/' + element['id']
             sizes = [r.get('size', element['size']) for r in element.get('runs', [{}])]
@@ -79,6 +89,33 @@ def inspect_design(scene, plan=None):
         balance_warnings, measurements = inspect_balance(slide, planned_slides.get(slide['id'], {}))
         warnings.extend(balance_warnings)
         balance_measurements.extend(measurements)
+        text_warnings, measurements = inspect_text_geometry(slide)
+        warnings.extend(text_warnings)
+        text_measurements.extend(measurements)
+        label_warnings, measurements = inspect_connector_labels(slide, scene.get('connector_routes', {}).get(slide['id'], []))
+        warnings.extend(label_warnings)
+        connector_label_measurements.extend(measurements)
+        line_warnings, conflicts = inspect_line_conflicts(slide)
+        warnings.extend(line_warnings)
+        line_conflicts.extend(conflicts)
+        visibility_warnings, visibility = inspect_text_visibility(slide)
+        warnings.extend(visibility_warnings)
+        text_visibility.extend(visibility)
+        repeated = repetitions(slide)
+        repeated_explanations.extend(repeated)
+        warnings.extend({'id': item['id'], 'message': 'Long literal explanation repeated across objects; inspect whether the repetition helps the reader.'}
+                        for item in repeated)
     return {'automated_scope': 'measurements_only_not_visual_approval', 'warnings': warnings,
             'balance_scope': 'Declared groups only; text-box geometry and font em size, not glyph bounds. No overlap prohibition.',
-            'balance_measurements': balance_measurements}
+            'balance_measurements': balance_measurements,
+            'text_geometry_scope': 'Unicode advance and font em estimates, not shaped glyph bounds. Rotated ink and chart-internal labels are not measured. No automatic rewriting or visual approval.',
+            'text_measurements': text_measurements,
+            'connector_label_measurements': connector_label_measurements,
+            'editorial_scope': 'Visible headings, declared intent links and literal repetitions only. No semantic equivalence, narrative quality or visual approval. Repeated conditions can be intentional; never automatically delete them.',
+            'reading_outline': reading_outline(scene, plan),
+            'repeated_explanations': repeated_explanations,
+            'line_conflict_scope': 'Open linear path/line centerlines, including rotation. Shared whole-path endpoints are allowed. Only axis-aligned opaque rectangles and native tables/charts occlude earlier lines. Arrowheads, curves and image transparency are not measured. No inferred junctions or automatic rewiring.',
+            'line_conflicts': line_conflicts,
+            'text_visibility_scope': 'Estimated nonrotated font-em regions, known flat fills and paint order only. Collision/covering and colour contrast are review prompts, never content changes or visual approval. Images, nonrectangular fills, translucent overlays above text and mixed-colour text over multiple backgrounds can be unmeasured. Chart label positions remain unmeasured.',
+            'text_visibility': text_visibility,
+            'connector_routes': scene.get('connector_routes', {})}

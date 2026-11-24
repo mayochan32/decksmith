@@ -56,7 +56,8 @@ if __name__=="__main__":
     parser.add_argument("--config",type=Path)
     parser.add_argument("--renderer",choices=("libreoffice","powerpoint","none"))
     parser.add_argument("--test-export",action="store_true",help="Explicitly open a temporary test deck in PowerPoint and test PNG/PDF")
-    parser.add_argument("--fonts",action="store_true",help="List installed Windows font families (does not prove glyph coverage)")
+    parser.add_argument("--fonts",action="store_true",help="List installed font names on Windows/macOS (does not prove glyph coverage)")
+    parser.add_argument('--font', action='append', default=[], help='Check one requested font name; repeat for multiple names. Does not install or replace fonts.')
     parser.add_argument('--pdf-input', action='store_true', help='Check optional local PDF parser and renderer dependencies')
     args=parser.parse_args()
     try:
@@ -73,14 +74,11 @@ if __name__=="__main__":
             except (SpecError, OSError, ValueError, subprocess.TimeoutExpired) as error:
                 report['pdf_input'] = {'ready': False, 'error': str(error)}
                 extra_ready = False
-        if args.fonts:
-            if sys.platform != 'win32':
-                raise SpecError('--fonts currently supports Windows; verify fonts using the local host on other platforms')
+        if args.fonts or args.font:
             try:
-                powershell = executable('powershell.exe','DECKSMITH_POWERSHELL')
-                names = json.loads(run([powershell,'-NoProfile','-NonInteractive','-STA','-File',
-                                       str(Path(__file__).with_name('powerpoint_export.ps1')),'-Fonts']))
-                report['fonts'] = {'status':'families_enumerated_not_glyph_verified','families':names}
+                from font_inventory import inspect_fonts
+                report['fonts'] = inspect_fonts(args.font, include_names=args.fonts or not args.font)
+                extra_ready = extra_ready and report['fonts']['ready']
             except (SpecError,OSError,ValueError,subprocess.TimeoutExpired) as error:
                 report['fonts'] = {'status':'failed','stage':'font_enumeration','error':str(error)}
                 extra_ready = False
@@ -90,7 +88,7 @@ if __name__=="__main__":
             from runtime_probe import test_export
             report['export_test'] = test_export()
             extra_ready = extra_ready and all(report['export_test'][key]['ready'] for key in ('png','pdf'))
-        print(json.dumps(report,ensure_ascii=False,indent=2))
+        print(json.dumps(report,ensure_ascii=True,indent=2))
         raise SystemExit(0 if report["renderer"]["ready"] and extra_ready else 2)
     except (SpecError,OSError,ValueError,subprocess.TimeoutExpired) as error:
         parser.exit(2,"DeckSmith: " + str(error) + "\n")
